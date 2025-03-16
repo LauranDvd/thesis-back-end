@@ -1,8 +1,10 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
+from domain.language_model.IProofSearchLanguageModel import IProofSearchLanguageModel
 
-class ProofSearchLanguageModel:
+
+class SimpleProofSearchLanguageModel(IProofSearchLanguageModel):
     def __init__(self, model_name, device):
         self.device = device
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)

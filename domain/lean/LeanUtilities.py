@@ -1,0 +1,44 @@
+import logging
+import sys
+
+from domain.EasyLogger import EasyLogger
+from domain.lean.LeanRepl import LeanRepl
+
+
+class LeanUtilities:
+    PROVED_FORMATTED_PROGRAM = f"[GOAL]no goals[PROOFSTEP]"
+    ERROR_FORMATTED_PROGRAM = "error"
+
+    logger = EasyLogger.getLogger(logging.DEBUG, sys.stdout)
+
+    @staticmethod
+    def build_formatted_program(program: str, add_mathlib_import=True) -> str:
+        if add_mathlib_import:
+            program = f"import Mathlib\n{program}"
+        program = f"{program}\nsorry"
+
+        LeanUtilities.logger.debug(f"Formatting program for: {program}")
+        repl_output = LeanRepl.run_repl(program)
+
+        print(f"repl output: {repl_output}")
+
+        if LeanRepl.does_repl_output_mean_solved(repl_output):
+            LeanUtilities.logger.debug("The theorem has been proven.")
+            return LeanUtilities.PROVED_FORMATTED_PROGRAM
+
+        if LeanRepl.repl_output_has_error_messages(repl_output):
+            LeanUtilities.logger.debug("REPL output has errors.")
+            return LeanUtilities.ERROR_FORMATTED_PROGRAM
+
+        try:
+            repl_tactics = repl_output["tactics"]
+            repl_last_tactic = repl_tactics[-1]
+            repl_final_goals = repl_last_tactic["goals"]
+
+            # """[GOAL]m n : ℕ
+            #   h : Nat.coprime m n
+            #   ⊢ Nat.gcd m n = 1[PROOFSTEP]"""
+            return f"[GOAL]{repl_final_goals}[PROOFSTEP]"
+        except Exception as e:
+            LeanUtilities.logger.error(f"Error while building formatted program: {e}")
+            return LeanUtilities.ERROR_FORMATTED_PROGRAM

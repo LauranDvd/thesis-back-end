@@ -1,16 +1,21 @@
-from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
+from domain.language_model.SimpleProofSearchLanguageModel import SimpleProofSearchLanguageModel
 
 
 class ProofSearchService:
-    def __init__(self, model_name, device):
-        self.model_name = model_name  # TODO use my fine-tuned model
+    def __init__(self, language_model, device):
         self.device = device
-        self.language_model = ProofSearchLanguageModel(self.model_name, self.device)
+        self.language_model = language_model
 
 
-    def search_proof(self, theorem: str) -> str:
-        output_proof = self.language_model.get_next_tactic(theorem)
-        return output_proof
+    # theorem should start with "theorem " and end in ":= by"
+    def search_proof(self, clean_theorem_statement: str) -> str:
+        full_proof = clean_theorem_statement
+
+        for i in range(8):
+            next_tactic = self.language_model.get_next_tactic(clean_theorem_statement)
+            full_proof = f"{full_proof}\n{next_tactic}"
+
+        return full_proof
         # TODO search algorithm
 
 
