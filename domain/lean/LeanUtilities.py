@@ -4,15 +4,21 @@ import sys
 from domain.EasyLogger import EasyLogger
 from domain.lean.LeanRepl import LeanRepl
 
+ERROR_FORMATTED_PROGRAM = "error"
+
 
 class LeanUtilities:
     PROVED_FORMATTED_PROGRAM = f"[GOAL]no goals[PROOFSTEP]"
-    ERROR_FORMATTED_PROGRAM = "error"
 
     logger = EasyLogger.getLogger(logging.DEBUG, sys.stdout)
 
     @staticmethod
     def build_formatted_program(program: str, add_mathlib_import=True) -> str:
+        if program[-5:] == "sorry": # TODO ensure the program gets here without "sorry"
+            program = program[:-6]
+        program = program.replace("sorry\n", "")
+        logging.debug(f"Building formatted program for program: {program}")
+
         if add_mathlib_import:
             program = f"import Mathlib\n{program}"
         program = f"{program}\nsorry"
@@ -28,7 +34,7 @@ class LeanUtilities:
 
         if LeanRepl.repl_output_has_error_messages(repl_output):
             LeanUtilities.logger.debug("REPL output has errors.")
-            return LeanUtilities.ERROR_FORMATTED_PROGRAM
+            return ERROR_FORMATTED_PROGRAM
 
         try:
             repl_tactics = repl_output["tactics"]
@@ -41,4 +47,4 @@ class LeanUtilities:
             return f"[GOAL]{repl_final_goals}[PROOFSTEP]"
         except Exception as e:
             LeanUtilities.logger.error(f"Error while building formatted program: {e}")
-            return LeanUtilities.ERROR_FORMATTED_PROGRAM
+            return ERROR_FORMATTED_PROGRAM

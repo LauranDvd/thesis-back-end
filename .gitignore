@@ -177,3 +177,5 @@ cython_debug/
 
 local_resources/
 external/
+
+ntptutorial/

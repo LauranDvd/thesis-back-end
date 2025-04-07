@@ -15,7 +15,7 @@ class LeanRepl:
         with open(file_path, "w") as f:
             f.write(lean_code)
 
-        file_path_relative_to_repl = "../../../local_resources/file.lean"
+        file_path_relative_to_repl = "../../local_resources/file.lean"
         repl_input = json.dumps({"path": file_path_relative_to_repl, "allTactics": True})
         LeanRepl.logger.debug(f"Will run REPL with input: {repl_input}")
         result = subprocess.run(  # TODO find a solution that doesn't run terminal commands
@@ -23,7 +23,7 @@ class LeanRepl:
             input=repl_input,
             capture_output=True,
             text=True,
-            cwd="external/repl/repl/"
+            cwd="external/repl/"
         )
         print(f"result stderr: {result.stderr}")
 
@@ -33,7 +33,7 @@ class LeanRepl:
             return {"error": "Invalid REPL output", "output": result.stdout}
 
     @staticmethod
-    def does_repl_output_mean_solved(repl_output: str) -> bool:
+    def does_repl_output_mean_solved(repl_output) -> bool:
         # the "sorry" we inserted at the end should result in an error
         # with data="no goals to be solved"
         if "messages" not in repl_output.keys():
