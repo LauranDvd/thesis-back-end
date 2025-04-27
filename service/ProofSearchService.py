@@ -2,13 +2,14 @@ import sys
 from logging import DEBUG
 
 from domain.EasyLogger import EasyLogger
+from domain.language_model.IProofSearchLanguageModel import IProofSearchLanguageModel
 from domain.language_model.LoraProofSearchLanguageModel import ERROR_TACTIC
 from domain.language_model.SimpleProofSearchLanguageModel import SimpleProofSearchLanguageModel, \
     THEOREM_WAS_PROVED_TACTIC
 
 
 class ProofSearchService:
-    def __init__(self, language_model, device):
+    def __init__(self, language_model: IProofSearchLanguageModel, device):
         self.device = device
         self.language_model = language_model
         self.logger = EasyLogger.getLogger(DEBUG, sys.stdout)
@@ -34,4 +35,6 @@ class ProofSearchService:
         return full_proof
         # TODO search algorithm
 
-
+    def set_language_model(self, language_model: IProofSearchLanguageModel):
+        self.language_model = language_model
+        self.logger.debug(f"Changed the service's language model")
