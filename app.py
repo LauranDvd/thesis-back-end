@@ -71,11 +71,11 @@ def proof():
         theorem_statement = extract_theorem_statement(theorem)
         logger.info(f"Clean theorem statement: {theorem_statement}")
 
-        generated_proof = proof_search_service.search_proof(theorem_statement)
+        generated_proof, successful = proof_search_service.search_proof(theorem_statement)
 
-        logger.info(f"Generated proof: {generated_proof}")
+        logger.info(f"Generated proof (successful: {successful}): {generated_proof}")
 
-        return jsonify({"proof": generated_proof})
+        return jsonify({"proof": generated_proof, "successful": successful})
 
 
 @app.route('/proof/fill', methods=['GET'])
@@ -90,11 +90,11 @@ def proof_fill():
         # theorem_statement = extract_theorem_statement(theorem)
         # logger.info(f"Clean theorem statement: {theorem_statement}")
 
-        generated_proof = proof_search_service.search_proof(theorem_and_partial_proof)
+        generated_proof, successful = proof_search_service.search_proof(theorem_and_partial_proof)
 
-        logger.info(f"Generated proof: {generated_proof}")
+        logger.info(f"Generated proof (succesful: {successful}): {generated_proof}")
 
-        return jsonify({"proof": generated_proof})
+        return jsonify({"proof": generated_proof, "successful": successful})
 
 
 @app.route('/language_model', methods=['GET', 'PATCH'])

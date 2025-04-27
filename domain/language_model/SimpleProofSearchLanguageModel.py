@@ -8,7 +8,7 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from domain.EasyLogger import EasyLogger
 from domain.language_model.IProofSearchLanguageModel import IProofSearchLanguageModel
 from domain.language_model.LoraProofSearchLanguageModel import ERROR_TACTIC
-from domain.lean.LeanUtilities import LeanUtilities, ERROR_FORMATTED_PROGRAM
+from domain.lean.LeanUtilities import LeanUtilities
 
 THEOREM_WAS_PROVED_TACTIC = "theorem_already_proved"
 
@@ -55,6 +55,6 @@ class SimpleProofSearchLanguageModel(IProofSearchLanguageModel):
 
         new_proof = theorem + "\n" + next_tactic
         new_formatted_proof = LeanUtilities.build_formatted_program(new_proof)
-        if new_formatted_proof != ERROR_FORMATTED_PROGRAM:
+        if new_formatted_proof != LeanUtilities.ERROR_FORMATTED_PROGRAM:
             return next_tactic
         return ERROR_TACTIC

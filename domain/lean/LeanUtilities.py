@@ -4,11 +4,10 @@ import sys
 from domain.EasyLogger import EasyLogger
 from domain.lean.LeanRepl import LeanRepl
 
-ERROR_FORMATTED_PROGRAM = "error"
-
 
 class LeanUtilities:
     PROVED_FORMATTED_PROGRAM = f"[GOAL]no goals[PROOFSTEP]"
+    ERROR_FORMATTED_PROGRAM = "error"
 
     logger = EasyLogger.getLogger(logging.DEBUG, sys.stdout)
 
@@ -34,7 +33,7 @@ class LeanUtilities:
 
         if LeanRepl.repl_output_has_error_messages(repl_output):
             LeanUtilities.logger.debug("REPL output has errors.")
-            return ERROR_FORMATTED_PROGRAM
+            return LeanUtilities.ERROR_FORMATTED_PROGRAM
 
         try:
             repl_tactics = repl_output["tactics"]
@@ -47,4 +46,4 @@ class LeanUtilities:
             return f"[GOAL]{repl_final_goals}[PROOFSTEP]"
         except Exception as e:
             LeanUtilities.logger.error(f"Error while building formatted program: {e}")
-            return ERROR_FORMATTED_PROGRAM
+            return LeanUtilities.ERROR_FORMATTED_PROGRAM

@@ -52,7 +52,7 @@ class LeanRepl:
         return error_message["data"] == "no goals to be solved"
 
     @staticmethod
-    def repl_output_has_error_messages(repl_output: str) -> bool:
+    def repl_output_has_error_messages(repl_output: dict) -> bool:
         if "messages" not in repl_output.keys():
             return False
         for message in repl_output["messages"]:

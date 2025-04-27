@@ -16,14 +16,14 @@ class ProofSearchService:
 
 
     # theorem should start with "theorem " and end in ":= by"
-    def search_proof(self, clean_theorem_statement: str) -> str:
+    def search_proof(self, clean_theorem_statement: str) -> (str, bool):
         full_proof = clean_theorem_statement
 
         for i in range(20):
             next_tactic = self.language_model.get_next_tactic(full_proof)
 
             if next_tactic == THEOREM_WAS_PROVED_TACTIC:
-                break
+                return full_proof, True
 
             if next_tactic != ERROR_TACTIC:
                 full_proof = f"{full_proof}\n{next_tactic}"
@@ -32,7 +32,7 @@ class ProofSearchService:
                 self.logger.debug("The tactic resulted in an error; will be ignored")
 
 
-        return full_proof
+        return full_proof, False
         # TODO search algorithm
 
     def set_language_model(self, language_model: IProofSearchLanguageModel):
