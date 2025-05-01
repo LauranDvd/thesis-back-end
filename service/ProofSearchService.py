@@ -9,18 +9,20 @@ from domain.language_model.SimpleProofSearchLanguageModel import SimpleProofSear
 
 
 class ProofSearchService:
-    def __init__(self, language_model: IProofSearchLanguageModel, device):
+    def __init__(self, model_short_name_to_config: dict, device):
         self.device = device
-        self.language_model = language_model
+        self.model_short_name_to_config = model_short_name_to_config
         self.logger = EasyLogger.getLogger(DEBUG, sys.stdout)
 
 
     # theorem should start with "theorem " and end in ":= by"
-    def search_proof(self, clean_theorem_statement: str) -> (str, bool):
+    def search_proof(self, clean_theorem_statement: str, model_short_name: str) -> (str, bool):
+        language_model = self.get_or_load_language_model(model_short_name)
+
         full_proof = clean_theorem_statement
 
         for i in range(20):
-            next_tactic = self.language_model.get_next_tactic(full_proof)
+            next_tactic = language_model.get_next_tactic(full_proof)
 
             if next_tactic == THEOREM_WAS_PROVED_TACTIC:
                 return full_proof, True
@@ -34,6 +36,14 @@ class ProofSearchService:
 
         return full_proof, False
         # TODO search algorithm
+
+
+    def get_or_load_language_model(self, model_short_name: str) -> IProofSearchLanguageModel:
+        return self.model_short_name_to_config[model_short_name].get_language_model()
+        # TODO Get or load
+
+
+
 
     def set_language_model(self, language_model: IProofSearchLanguageModel):
         self.language_model = language_model
