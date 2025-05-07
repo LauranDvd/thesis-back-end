@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from numpy.ma.testutils import assert_equal
 
-from domain.lean.LeanRepl import LeanRepl
+from domain.lean.LakeReplFacade import LakeReplFacade
 
 
 class TestLeanRepl(TestCase):
@@ -14,7 +14,7 @@ class TestLeanRepl(TestCase):
             {'severity': 'error', 'pos': {'line': 2, 'column': 67}, 'endPos': {'line': 3, 'column': 5},
              'data': 'unsolved goals\nn : ℕ\nh₀ : n ≠ 0\n⊢ 2 ∣ 4 ^ n'}], 'env': 0}
 
-        assert_equal(True, LeanRepl.repl_output_has_error_messages(repl_output))
+        assert_equal(True, LakeReplFacade.repl_output_has_error_messages(repl_output))
 
     def test_repl_output_has_error_messages_returns_false_if_repl_output_does_not_have_error_message(self):
         repl_output = {'tactics': [
@@ -43,7 +43,7 @@ class TestLeanRepl(TestCase):
             {'severity': 'warning', 'pos': {'line': 2, 'column': 8}, 'endPos': {'line': 2, 'column': 30},
              'data': "declaration uses 'sorry'"}], 'env': 0}
 
-        assert_equal(False, LeanRepl.repl_output_has_error_messages(repl_output))
+        assert_equal(False, LakeReplFacade.repl_output_has_error_messages(repl_output))
 
     def test_does_repl_output_mean_solved_returns_true_if_solved(self):
         repl_output = {'tactics': [{'usedConstants': ['Eq.mpr', 'HMul.hMul', 'congrArg', 'id',
@@ -58,7 +58,7 @@ class TestLeanRepl(TestCase):
                                     'endPos': {'line': 4, 'column': 5}}], 'messages': [
             {'severity': 'error', 'pos': {'line': 4, 'column': 0}, 'endPos': {'line': 4, 'column': 5},
              'data': 'no goals to be solved'}], 'env': 0}
-        assert_equal(True, LeanRepl.does_repl_output_mean_solved(repl_output))
+        assert_equal(True, LakeReplFacade.does_repl_output_mean_solved(repl_output))
 
     def test_does_repl_output_mean_solved_returns_false_if_not_solved(self):
         repl_output = {'tactics': [
@@ -86,4 +86,4 @@ class TestLeanRepl(TestCase):
              'endPos': {'line': 7, 'column': 5}}], 'messages': [
             {'severity': 'warning', 'pos': {'line': 2, 'column': 8}, 'endPos': {'line': 2, 'column': 30},
              'data': "declaration uses 'sorry'"}], 'env': 0}
-        assert_equal(False, LeanRepl.does_repl_output_mean_solved(repl_output))
+        assert_equal(False, LakeReplFacade.does_repl_output_mean_solved(repl_output))

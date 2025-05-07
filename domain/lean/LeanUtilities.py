@@ -2,18 +2,24 @@ import logging
 import sys
 
 from domain.EasyLogger import EasyLogger
-from domain.lean.LeanRepl import LeanRepl
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 
 class LeanUtilities:
     PROVED_FORMATTED_PROGRAM = f"[GOAL]no goals[PROOFSTEP]"
     ERROR_FORMATTED_PROGRAM = "error"
 
-    logger = EasyLogger.getLogger(logging.DEBUG, sys.stdout)
+    logger = EasyLogger()
 
     @staticmethod
-    def build_formatted_program(program: str, add_mathlib_import=True) -> str:
-        if program[-5:] == "sorry": # TODO ensure the program gets here without "sorry"
+    def build_formatted_program(
+            program: str,
+            lean_evaluator: ILeanEvaluator,
+            lean_evaluation_interpreter: ILeanEvaluationInterpreter,
+            add_mathlib_import=True
+    ) -> str:
+        if program[-5:] == "sorry":  # TODO ensure the program gets here without "sorry"
             program = program[:-6]
         program = program.replace("sorry\n", "")
         logging.debug(f"Building formatted program for program: {program}")
@@ -23,15 +29,15 @@ class LeanUtilities:
         program = f"{program}\nsorry"
 
         LeanUtilities.logger.debug(f"Formatting program for: {program}")
-        repl_output = LeanRepl.run_repl(program)
+        repl_output = lean_evaluator.evaluate(program)
 
         print(f"repl output: {repl_output}")
 
-        if LeanRepl.does_repl_output_mean_solved(repl_output):
+        if lean_evaluation_interpreter.is_theorem_solved(repl_output):
             LeanUtilities.logger.debug("The theorem has been proven.")
             return LeanUtilities.PROVED_FORMATTED_PROGRAM
 
-        if LeanRepl.repl_output_has_error_messages(repl_output):
+        if lean_evaluation_interpreter.has_errors(repl_output):
             LeanUtilities.logger.debug("REPL output has errors.")
             return LeanUtilities.ERROR_FORMATTED_PROGRAM
 

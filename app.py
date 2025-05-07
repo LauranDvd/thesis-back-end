@@ -1,18 +1,17 @@
 import logging
 import sys
-import re
 
-from flask import Flask, request, jsonify
 import torch
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 
+from controller.ProofSearchController import ProofSearchController
 from domain.EasyLogger import EasyLogger
-from domain.language_model.LoraProofSearchLanguageModel import LoraProofSearchLanguageModel
-from domain.language_model.model_configuration.IModelConfiguration import IModelConfiguration
-from domain.language_model.SimpleProofSearchLanguageModel import SimpleProofSearchLanguageModel
-from domain.language_model.model_configuration.LoraModelConfiguration import LoraModelConfiguration
-from domain.language_model.model_configuration.NonLoraModelConfiguration import NonLoraModelConfiguration
+from domain.language_model.model_configuration.LoraModelAndPath import LoraModelAndPath
+from domain.language_model.model_configuration.NonLoraModelAndPath import NonLoraModelAndPath
 from service.ProofSearchService import ProofSearchService
+
+# TODO separate model inference service
 
 app = Flask(__name__)
 CORS(app)
@@ -22,12 +21,12 @@ print(f"Using device: {device}")
 
 model_short_name_to_config = {
     "pythia-160M":
-        NonLoraModelConfiguration(
+        NonLoraModelAndPath(
             "local_resources/language_models/pythia-160M-deduped/checkpoint-2000",
             device
         ),
     "pythia-160M-lora":
-        LoraModelConfiguration(
+        LoraModelAndPath(
             "local_resources/language_models/id_2_pythia-160M-deduped_lora/checkpoint-2000",
             device
         )
@@ -39,59 +38,50 @@ proof_search_service = ProofSearchService(
     device
 )
 
-logger = EasyLogger.getLogger(logging.DEBUG, sys.stdout)
+proof_search_controller = ProofSearchController(proof_search_service)
+
+logger = EasyLogger()
 
 
-def extract_theorem_statement(theorem: str) -> str:
-    match = re.search(r'(theorem .*? by)', theorem)
-    return match.group(1) if match else None
+# TODO status codes and responses should be like in the written thesis
 
-
+# TODO: send theorem with 'POST'; poll its proof with 'GET'
 @app.route('/proof', methods=['GET'])
 def proof():
     if request.method == 'GET':
-        theorem = request.args.get("theorem")
-        if not theorem:
-            return jsonify({"error": "No theorem provided"}), 400
+        theorem = request.args.get("theorem") # TODO use body instead of query params (also update written paper)
         model_short_name = request.args.get("model")
-        if not model_short_name:
-            return jsonify({"error": "No language model name provided"}), 400
 
         logger.info(f"Received theorem: {theorem}. Requested model: {model_short_name}")
 
-        theorem_statement = extract_theorem_statement(theorem)
-        logger.info(f"Clean theorem statement: {theorem_statement}")
-
-        generated_proof, successful = proof_search_service.search_proof(theorem_statement, model_short_name)
-
-        logger.info(f"Generated proof (successful: {successful}): {generated_proof}")
-
-        return jsonify({"proof": generated_proof, "successful": successful})
+        try:
+            generated_proof, successful = proof_search_controller.search_proof(theorem, model_short_name, True)
+            logger.info(f"Generated proof (successful: {successful}): {generated_proof}")
+            return jsonify({"proof": generated_proof, "successful": successful})
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
 
 @app.route('/proof/fill', methods=['GET'])
 def proof_fill():
     if request.method == 'GET':
-        theorem_and_partial_proof = request.args.get("theorem_and_partial_proof")
-        if not theorem_and_partial_proof:
-            return jsonify({"error": "No theorem and partial proof provided"}), 400
+        theorem_and_partial_proof = request.args.get("theorem_and_partial_proof") # TODO use body instead of query params (also update written paper)
+        model_short_name = request.args.get("model")
 
-        logger.info(f"Received theorem and partial proof: {theorem_and_partial_proof}")
+        logger.info(f"Received theorem and partial proof: {theorem_and_partial_proof}. Requested model: {model_short_name}")
 
-        # theorem_statement = extract_theorem_statement(theorem)
-        # logger.info(f"Clean theorem statement: {theorem_statement}")
-
-        generated_proof, successful = proof_search_service.search_proof(theorem_and_partial_proof)
-
-        logger.info(f"Generated proof (succesful: {successful}): {generated_proof}")
-
-        return jsonify({"proof": generated_proof, "successful": successful})
+        try:
+            generated_proof, successful = proof_search_controller.search_proof(theorem_and_partial_proof, model_short_name, False)
+            logger.info(f"Generated proof (successful: {successful}): {generated_proof}")
+            return jsonify({"proof": generated_proof, "successful": successful})
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
 
 
 @app.route('/language_model', methods=['GET', 'PATCH'])
 def language_model():
     if request.method == 'GET':
-        return jsonify(list(model_short_name_to_config.keys()))
+        return jsonify(proof_search_controller.get_language_models())
 
 
 if __name__ == '__main__':
