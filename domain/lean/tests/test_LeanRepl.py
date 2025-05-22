@@ -5,8 +5,8 @@ from numpy.ma.testutils import assert_equal
 from domain.lean.LakeReplFacade import LakeReplFacade
 
 
-class TestLeanRepl(TestCase):
-    def test_repl_output_has_error_messages_returns_true_if_repl_output_has_error_message(self):
+class TestLakeReplFacade(TestCase):
+    def test_has_errors_returns_true_if_repl_output_has_error_message(self):
         repl_output = {'tactics': [{'usedConstants': [], 'tactic': '<failed to pretty print>', 'proofState': 0,
                                     'pos': {'line': 3, 'column': 0}, 'goals': 'n : ℕ\nh₀ : n ≠ 0\n⊢ 2 ∣ 4 ^ n',
                                     'endPos': {'line': 3, 'column': 5}}], 'messages': [
@@ -14,9 +14,9 @@ class TestLeanRepl(TestCase):
             {'severity': 'error', 'pos': {'line': 2, 'column': 67}, 'endPos': {'line': 3, 'column': 5},
              'data': 'unsolved goals\nn : ℕ\nh₀ : n ≠ 0\n⊢ 2 ∣ 4 ^ n'}], 'env': 0}
 
-        assert_equal(True, LakeReplFacade.repl_output_has_error_messages(repl_output))
+        assert_equal(True, LakeReplFacade().has_errors(repl_output))
 
-    def test_repl_output_has_error_messages_returns_false_if_repl_output_does_not_have_error_message(self):
+    def test_has_errors_returns_false_if_repl_output_does_not_have_error_message(self):
         repl_output = {'tactics': [
             {'usedConstants': [], 'tactic': 'revert n h₀', 'proofState': 1, 'pos': {'line': 3, 'column': 0},
              'goals': 'n : ℕ\nh₀ : n ≠ 0\n⊢ 2 ∣ 4 ^ n', 'endPos': {'line': 3, 'column': 11}},
@@ -43,9 +43,9 @@ class TestLeanRepl(TestCase):
             {'severity': 'warning', 'pos': {'line': 2, 'column': 8}, 'endPos': {'line': 2, 'column': 30},
              'data': "declaration uses 'sorry'"}], 'env': 0}
 
-        assert_equal(False, LakeReplFacade.repl_output_has_error_messages(repl_output))
+        assert_equal(False, LakeReplFacade().has_errors(repl_output))
 
-    def test_does_repl_output_mean_solved_returns_true_if_solved(self):
+    def test_is_theorem_solved_returns_true_if_solved(self):
         repl_output = {'tactics': [{'usedConstants': ['Eq.mpr', 'HMul.hMul', 'congrArg', 'id',
                                                       'instMulNat', 'instOfNatNat', 'instHAdd',
                                                       'HAdd.hAdd', 'Nat', 'instAddNat', 'OfNat.ofNat',
@@ -58,9 +58,9 @@ class TestLeanRepl(TestCase):
                                     'endPos': {'line': 4, 'column': 5}}], 'messages': [
             {'severity': 'error', 'pos': {'line': 4, 'column': 0}, 'endPos': {'line': 4, 'column': 5},
              'data': 'no goals to be solved'}], 'env': 0}
-        assert_equal(True, LakeReplFacade.does_repl_output_mean_solved(repl_output))
+        assert_equal(True, LakeReplFacade().is_theorem_solved(repl_output))
 
-    def test_does_repl_output_mean_solved_returns_false_if_not_solved(self):
+    def test_is_theorem_solved_returns_false_if_not_solved(self):
         repl_output = {'tactics': [
             {'usedConstants': [], 'tactic': 'revert n h₀', 'proofState': 1, 'pos': {'line': 3, 'column': 0},
              'goals': 'n : ℕ\nh₀ : n ≠ 0\n⊢ 2 ∣ 4 ^ n', 'endPos': {'line': 3, 'column': 11}},
@@ -86,4 +86,4 @@ class TestLeanRepl(TestCase):
              'endPos': {'line': 7, 'column': 5}}], 'messages': [
             {'severity': 'warning', 'pos': {'line': 2, 'column': 8}, 'endPos': {'line': 2, 'column': 30},
              'data': "declaration uses 'sorry'"}], 'env': 0}
-        assert_equal(False, LakeReplFacade.does_repl_output_mean_solved(repl_output))
+        assert_equal(False, LakeReplFacade().is_theorem_solved(repl_output))

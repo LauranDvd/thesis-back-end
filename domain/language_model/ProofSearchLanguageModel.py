@@ -26,6 +26,9 @@ class ProofSearchLanguageModel:
 
         self.logger.debug(f"Formatted theorem: {formatted_theorem}")
 
+        if formatted_theorem == LeanUtilities.PROVED_FORMATTED_PROGRAM:
+            return THEOREM_WAS_PROVED_TACTIC
+
         input_ids = self.tokenizer.encode(formatted_theorem, return_tensors='pt')
         out = self.model.generate(
             input_ids,

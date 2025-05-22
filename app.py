@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 
 import torch
@@ -11,6 +12,8 @@ from domain.language_model.model_configuration.LoraModelAndPath import LoraModel
 from domain.language_model.model_configuration.NonLoraModelAndPath import NonLoraModelAndPath
 from service.ProofSearchService import ProofSearchService
 
+from config import MODEL_PATHS
+
 # TODO separate model inference service
 
 app = Flask(__name__)
@@ -19,15 +22,17 @@ CORS(app)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"Using device: {device}")
 
+print(f"pythia-160M path: {MODEL_PATHS["pythia-160M"]}")
+
 model_short_name_to_config = {
     "pythia-160M":
         NonLoraModelAndPath(
-            "local_resources/language_models/pythia-160M-deduped/checkpoint-2000",
+            MODEL_PATHS["pythia-160M"],
             device
         ),
     "pythia-160M-lora":
         LoraModelAndPath(
-            "local_resources/language_models/id_2_pythia-160M-deduped_lora/checkpoint-2000",
+            MODEL_PATHS["pythia-160M-lora"],
             device
         )
 }
