@@ -1,19 +1,29 @@
 import logging
+import sys
+from logging import DEBUG
+
+from domain.EasyLoggerSingletonMeta import EasyLoggerSingletonMeta
 
 
-class EasyLogger:
+class EasyLogger(metaclass=EasyLoggerSingletonMeta):
+    def __init__(self):
+        print("Initializing EasyLogger")
+        self.logger = logging.getLogger()
+        self.logger.setLevel(DEBUG)
 
-    @staticmethod
-    def getLogger(level: int | str, output_stream) -> logging.Logger:
-        logger = logging.getLogger()
-        logger.setLevel(level)
-
-        console_handler = logging.StreamHandler(output_stream)
-        console_handler.setLevel(level)
+        console_handler = logging.StreamHandler(sys.stdout)
+        console_handler.setLevel(DEBUG)
 
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         console_handler.setFormatter(formatter)
 
-        logger.addHandler(console_handler)
+        self.logger.addHandler(console_handler)
 
-        return logger
+    def info(self, message: str):
+        self.logger.info(message)
+
+    def debug(self, message: str):
+        self.logger.debug(message)
+
+    def error(self, message: str):
+        self.logger.error(message)
