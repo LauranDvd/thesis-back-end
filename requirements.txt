@@ -9,3 +9,6 @@ safetensors==0.4.5
 tokenizers==0.21.1
 transformers==4.51.2
 flask==3.0.3
+torch==2.6.0
+torchaudio==2.6.0
+torchvision==0.21.0
