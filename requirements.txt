@@ -8,9 +8,9 @@ python-multipart==0.0.20
 safetensors==0.4.5
 scipy==1.15.2
 tokenizers==0.21.1
-torch==2.6.0+cpu
-torchaudio==2.6.0+cpu
-torchvision==0.21.0+cpu
+torch==2.6.0
+torchaudio==2.6.0
+torchvision==0.21.0
 tqdm==4.66.5
 transformers==4.51.2
 

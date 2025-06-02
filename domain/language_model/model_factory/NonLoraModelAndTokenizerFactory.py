@@ -10,8 +10,11 @@ from domain.language_model.model_factory.IModelAndTokenizerFactory import IModel
 class NonLoraModelAndTokenizerFactory(IModelAndTokenizerFactory):
     @override
     def get_model(self, model_path: str, device: str, token_embeddings_length: int = 0):
-        return (AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.float16, device_map="auto")
-                 .to(device))
+        return AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.float16,
+            device_map="auto"
+        )
 
     @override
     def get_tokenizer(self, model_path: str):

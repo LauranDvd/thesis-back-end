@@ -23,6 +23,13 @@ class ProofSearchController:
 
         return self.proof_search_service.search_proof(theorem, model_short_name)
 
+    def search_informal_proof(self, theorem: str, model_short_name: str):
+        if not theorem:
+            raise ValueError("No theorem provided")
+        if not model_short_name:
+            raise ValueError("No language model name provided")
+        return self.proof_search_service.search_informal_proof(theorem, model_short_name)
+
     def get_language_models(self):
         return self.proof_search_service.get_language_models()
 
