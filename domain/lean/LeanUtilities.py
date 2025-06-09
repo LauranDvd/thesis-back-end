@@ -16,17 +16,12 @@ class LeanUtilities:
     def build_formatted_program(
             program: str,
             lean_evaluator: ILeanEvaluator,
-            lean_evaluation_interpreter: ILeanEvaluationInterpreter,
-            add_mathlib_import=True
+            lean_evaluation_interpreter: ILeanEvaluationInterpreter
     ) -> str:
         if program[-5:] == "sorry":  # TODO ensure the program gets here without "sorry"
             program = program[:-6]
         program = program.replace("sorry\n", "")
         logging.debug(f"Building formatted program for program: {program}")
-
-        if add_mathlib_import:
-            program = f"import Mathlib\n{program}"
-        program = f"{program}\nsorry"
 
         LeanUtilities.logger.debug(f"Formatting program for: {program}")
         repl_output = lean_evaluator.evaluate(program)
@@ -42,9 +37,7 @@ class LeanUtilities:
             return LeanUtilities.ERROR_FORMATTED_PROGRAM
 
         try:
-            repl_tactics = repl_output["tactics"]
-            repl_last_tactic = repl_tactics[-1]
-            repl_final_goals = repl_last_tactic["goals"]
+            repl_final_goals = repl_output.messages[-1].data[len("unsolved goals\n"):]
 
             # """[GOAL]m n : ℕ
             #   h : Nat.coprime m n

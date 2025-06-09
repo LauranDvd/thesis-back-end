@@ -3,12 +3,21 @@ from typing import override
 from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
 from domain.language_model.model_configuration.IModelAndPath import IModelAndPath
 from domain.language_model.model_factory.NonLoraModelAndTokenizerFactory import NonLoraModelAndTokenizerFactory
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 
 class NonLoraModelAndPath(IModelAndPath):
-    def __init__(self, model_path: str, device: str):
+    def __init__(
+            self, model_path: str, base_model_name: str, device: str,
+            lean_evaluator: ILeanEvaluator,
+            lean_evaluation_interpreter: ILeanEvaluationInterpreter
+    ):
         self.model_path = model_path
-        self.language_model = ProofSearchLanguageModel(model_path, device, NonLoraModelAndTokenizerFactory())
+        self.language_model = ProofSearchLanguageModel(
+            model_path, base_model_name, device, NonLoraModelAndTokenizerFactory(),
+            lean_evaluator, lean_evaluation_interpreter
+        )
 
     @override
     def get_model_path(self) -> str:
