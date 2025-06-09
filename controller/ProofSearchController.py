@@ -3,6 +3,7 @@ from logging import DEBUG
 import re
 
 from domain.EasyLogger import EasyLogger
+from service.InformalProofSearchResult import InformalProofSearchResult
 from service.ProofSearchService import ProofSearchService
 
 
@@ -22,6 +23,13 @@ class ProofSearchController:
             self.logger.info(f"Clean theorem statement: {theorem}")
 
         return self.proof_search_service.search_proof(theorem, model_short_name)
+
+    def search_informal_proof(self, theorem: str, model_short_name: str) -> InformalProofSearchResult:
+        if not theorem:
+            raise ValueError("No theorem provided")
+        if not model_short_name:
+            raise ValueError("No language model name provided")
+        return self.proof_search_service.search_informal_proof(theorem, model_short_name)
 
     def get_language_models(self):
         return self.proof_search_service.get_language_models()

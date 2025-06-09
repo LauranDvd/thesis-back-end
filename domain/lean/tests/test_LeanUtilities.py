@@ -2,12 +2,13 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from domain.lean.LakeReplFacade import LakeReplFacade
+from domain.lean.LeanInteractFacade import LeanInteractFacade
 from domain.lean.LeanUtilities import LeanUtilities
 
 
 class TestLeanUtilities(TestCase):
     def setUp(self):
-        self.lean_evaluation_interpreter = LakeReplFacade()
+        self.lean_evaluation_interpreter = LeanInteractFacade()
         self.lean_evaluator = self.lean_evaluation_interpreter
 
     @patch('domain.lean.LakeReplFacade.LakeReplFacade.evaluate')
@@ -58,8 +59,7 @@ n✝ : ℕ
 
         self.assertEqual(expected_formatted_program,
                          LeanUtilities.build_formatted_program(valid_program, self.lean_evaluator,
-                                                               self.lean_evaluation_interpreter,
-                                                               False))
+                                                               self.lean_evaluation_interpreter))
 
     @patch('domain.lean.LakeReplFacade.LakeReplFacade.evaluate')
     @patch('domain.lean.LakeReplFacade.LakeReplFacade.is_theorem_solved')
@@ -90,7 +90,7 @@ rw [h]"""
 
         self.assertEqual(LeanUtilities.PROVED_FORMATTED_PROGRAM,
                          LeanUtilities.build_formatted_program(valid_program, self.lean_evaluator,
-                                                               self.lean_evaluation_interpreter, False))
+                                                               self.lean_evaluation_interpreter))
 
     @patch('domain.lean.LakeReplFacade.LakeReplFacade.evaluate')
     @patch('domain.lean.LakeReplFacade.LakeReplFacade.is_theorem_solved')
@@ -109,5 +109,4 @@ rw [h]"""
 abcde"""
         self.assertEqual(LeanUtilities.ERROR_FORMATTED_PROGRAM, LeanUtilities.build_formatted_program(invalid_program,
                                                                                                       self.lean_evaluator,
-                                                                                                      self.lean_evaluation_interpreter,
-                                                                                                      False))
+                                                                                                      self.lean_evaluation_interpreter))
