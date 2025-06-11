@@ -1,0 +1,2 @@
+class LeanException(Exception):
+    pass
