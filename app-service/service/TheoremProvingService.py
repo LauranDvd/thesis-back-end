@@ -1,9 +1,8 @@
-from jinja2.lexer import TOKEN_DOT
-
 from api.TheoremQueue import TheoremQueue
 from domain.EasyLogger import EasyLogger
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
 from domain.lean.ILeanEvaluator import ILeanEvaluator
+from dto.client.ProofClientDto import ProofClientDto
 from repository import TheoremRepository
 from repository.orm.Entities import ProofEntity
 
@@ -13,7 +12,7 @@ class TheoremProvingService:
             self,
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter,
-            theorem_queue: TheoremQueue, # TODO add the queue in the repo?
+            theorem_queue: TheoremQueue,  # TODO add the queue in the repo?
             theorem_repository: TheoremRepository,
             logger: EasyLogger
     ):
@@ -33,18 +32,18 @@ class TheoremProvingService:
             return False, self.__lean_evaluation_interpreter.get_error(lean_evaluation_result)
         return True, ""
 
-    def send_proof_request(self, theorem: str, model: str):
-        proof_id = self.__theorem_repository.add_incomplete_proof(theorem, False)
+    def send_proof_request(self, theorem: str, model: str, user_id: str):
+        proof_id = self.__theorem_repository.add_incomplete_proof(theorem, user_id, False)
         self.__theorem_queue.send_proof_request(theorem, proof_id, model)
         return proof_id
 
-    def send_informal_proof_request(self, informal_theorem: str, model: str):
-        proof_id = self.__theorem_repository.add_incomplete_informal_proof(informal_theorem)
+    def send_informal_proof_request(self, informal_theorem: str, user_id: str, model: str):
+        proof_id = self.__theorem_repository.add_incomplete_informal_proof(user_id, informal_theorem)
         self.__theorem_queue.send_informal_proof_request(informal_theorem, proof_id, model)
         return proof_id
 
-    def send_proof_fill_request(self, theorem_with_partial_proof: str, model: str):
-        proof_id = self.__theorem_repository.add_incomplete_proof(theorem_with_partial_proof, True)
+    def send_proof_fill_request(self, theorem_with_partial_proof: str, user_id: str, model: str):
+        proof_id = self.__theorem_repository.add_incomplete_proof(theorem_with_partial_proof, user_id, True)
         self.__theorem_queue.send_proof_fill_request(theorem_with_partial_proof, proof_id, model)
         return proof_id
 
@@ -64,6 +63,17 @@ class TheoremProvingService:
 
         return informal_proof, proof.successful, formalized_theorem, proof.formal_proof
 
-
     def get_language_model_names(self) -> list[str]:
         return [model.model_name for model in self.__theorem_repository.get_language_models()]
+
+    def get_proof_history(self, user_id) -> list[ProofClientDto]:
+        proof_entities: list[ProofEntity] = self.__theorem_repository.get_proofs_by_user_id(user_id)
+        proof_dtos = []
+        for proof_entity in proof_entities:
+            proof_dtos.append(ProofClientDto.from_proof_entity(
+                    proof_entity,
+                    self.__theorem_repository.get_formalization(proof_entity.statement_formalization_id),
+                    self.__theorem_repository.get_formalization(proof_entity.proof_formalization_id)
+                )
+            )
+        return proof_dtos

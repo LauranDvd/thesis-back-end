@@ -28,8 +28,8 @@ if __name__ == '__main__':
     sqs_url = os.environ["THEOREM_SQS_URL"]
     sqs_client = boto3.client('sqs')
 
-    lean_interact_facade = LeanInteractFacade()
-    # lean_interact_facade = MockLeanExecutor()
+    # lean_interact_facade = LeanInteractFacade()
+    lean_interact_facade = MockLeanExecutor()
 
     formalization_language_model = FormalizationLanguageModel(
         "gpt-4.1-mini-2025-04-14",
@@ -43,7 +43,7 @@ if __name__ == '__main__':
              "@" + os.environ['AWS_RDS_ENDPOINT'] + ":" + os.environ['AWS_RDS_PORT'] + "/" + \
              os.environ['AWS_RDS_DB_NAME']
     db_engine = create_engine(db_url, pool_pre_ping=True)
-    theorem_repository = TheoremRepository(db_engine)
+    theorem_repository = TheoremRepository(db_engine, EasyLogger())
 
     model_service = ModelService(EasyLogger(), theorem_repository)
 

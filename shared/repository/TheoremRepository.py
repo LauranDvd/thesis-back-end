@@ -1,17 +1,17 @@
-from typing import overload
-
-from sqlalchemy import create_engine, Engine, select
+from sqlalchemy import Engine, select
 from sqlalchemy.orm import sessionmaker
 
+from domain.EasyLogger import EasyLogger
 from repository.orm.Entities import ProofEntity, LanguageModelEntity, FormalizationEntity
 
 from service.InformalProofSearchResult import InformalProofSearchResult
 
 
 class TheoremRepository:
-    def __init__(self, db_engine: Engine):
+    def __init__(self, db_engine: Engine, logger: EasyLogger):
         self.__db_engine = db_engine
         self.__session_local = sessionmaker(bind=db_engine)
+        self.__logger = logger
 
     def is_language_model_available(self, model_name: str) -> bool:
         session = self.__session_local()
@@ -33,6 +33,15 @@ class TheoremRepository:
         finally:
             session.close()
 
+    def get_proofs_by_user_id(self, user_id: str) -> list[ProofEntity]:
+        session = self.__session_local()
+        try:
+            statement = select(ProofEntity).where(ProofEntity.user_id == user_id)
+            execution_result = session.execute(statement).all()
+            return [row[0] for row in execution_result]
+        finally:
+            session.close()
+
     def retrieve_proof(self, proof_id: int) -> ProofEntity:
         session = self.__session_local()
         try:
@@ -42,12 +51,12 @@ class TheoremRepository:
         finally:
             session.close()
 
-    def add_incomplete_proof(self, theorem: str, did_user_provide_partial_proof: bool) -> int:
+    def add_incomplete_proof(self, theorem: str, user_id: str, did_user_provide_partial_proof: bool) -> int:
         proof = ProofEntity(
             original_theorem_statement=theorem,
             formal_proof="",
             did_user_provide_partial_proof=did_user_provide_partial_proof,
-            user_id=1,
+            user_id=user_id,
             statement_formalization_id=None,
             proof_formalization_id=None
         )
@@ -62,12 +71,12 @@ class TheoremRepository:
 
         return proof.proof_id
 
-    def add_incomplete_informal_proof(self, informal_theorem: str) -> int:
+    def add_incomplete_informal_proof(self, user_id: str, informal_theorem: str) -> int:
         proof = ProofEntity(
             original_theorem_statement=informal_theorem,
             formal_proof="",
             did_user_provide_partial_proof=False,
-            user_id=1,
+            user_id=user_id,
             statement_formalization_id=None,
             proof_formalization_id=None
         )
@@ -98,11 +107,17 @@ class TheoremRepository:
 
         return formalization.formalization_id
 
-    def get_formalization(self, formalization_id: int) -> FormalizationEntity:
+    def get_formalization(self, formalization_id: int) -> FormalizationEntity | None:
+        if formalization_id is None:
+            return None
+
         session = self.__session_local()
         try:
             statement = select(FormalizationEntity).where(FormalizationEntity.formalization_id == formalization_id)
             execution_result = session.execute(statement).all()
+            if len(execution_result) == 0:
+                self.__logger.debug(f"Formalization {formalization_id} not found")
+                return None
             return [row[0] for row in execution_result][0]
         finally:
             session.close()

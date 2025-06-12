@@ -29,17 +29,7 @@ class ProofEntity(Base):
     original_theorem_statement = Column(String)
     formal_proof = Column(String)
     did_user_provide_partial_proof = Column(Boolean)
-    user_id = Column(Integer, ForeignKey('user.user_id'))
+    user_id = Column(String)
     statement_formalization_id = Column(Integer, ForeignKey('formalization.formalization_id'), nullable=True)
     proof_formalization_id = Column(Integer, ForeignKey('formalization.formalization_id'), nullable=True)
     successful = Column(Boolean)
-
-class UserEntity(Base):
-    __tablename__ = 'user'
-
-    user_id = Column(Integer, primary_key=True, autoincrement=True)
-    auth0_user_id = Column(String, unique=True)
-
-    proofs = relationship('ProofEntity', back_populates='user')
-
-ProofEntity.user = relationship('UserEntity', back_populates='proofs')
