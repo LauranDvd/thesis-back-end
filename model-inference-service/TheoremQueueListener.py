@@ -94,6 +94,6 @@ class TheoremQueueListener:
                 )
 
     @staticmethod
-    def __extract_theorem_statement(theorem: str) -> str: # TODO move this from here
+    def __extract_theorem_statement(theorem: str) -> str:
         match = re.search(r'(theorem .*? by)', theorem)
         return match.group(1) if match else None

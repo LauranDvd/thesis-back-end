@@ -32,7 +32,7 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
             lean_output = self.__lean_server.run(Command(cmd=lean_code, all_tactics=True)) #, env=self.env_number))
             self.__logger.debug(f"Finished running code on the lean server")
             if type(lean_output) is LeanError:
-                if lean_output.message == "Unknown environment.": # todo add constants
+                if lean_output.message == "Unknown environment.":
                     self.__logger.debug("The Lean executor does not recognize the environment. Will reinitialize the environment.")
                     self.__lean_server.clear_session_cache(force=True)
                     self.__initialize_lean_environment()

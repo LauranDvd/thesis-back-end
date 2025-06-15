@@ -30,7 +30,7 @@ class ProofSearchLanguageModel:
         self.__lean_evaluation_interpreter = lean_evaluation_interpreter
 
     def get_next_tactic(self, theorem: str) -> str:
-        if theorem[-5:] == "sorry":  # TODO ensure the program gets here without "sorry"
+        if theorem[-5:] == "sorry":
             theorem = theorem[:-6]
         formatted_theorem = LeanUtilities.build_formatted_program(theorem, self.__lean_evaluator,
                                                                   self.__lean_evaluation_interpreter)

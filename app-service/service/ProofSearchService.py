@@ -12,7 +12,6 @@ class ProofSearchService:
 
     def get_or_load_language_model(self, model_short_name: str) -> ProofSearchLanguageModel:
         return self.__model_short_name_to_config[model_short_name].get_language_model()
-        # TODO Get or load
 
     def get_language_models(self):
         return list(self.__model_short_name_to_config.keys())

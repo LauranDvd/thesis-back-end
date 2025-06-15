@@ -18,7 +18,7 @@ class LeanUtilities:
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter
     ) -> str:
-        if program[-5:] == "sorry":  # TODO ensure the program gets here without "sorry"
+        if program[-5:] == "sorry":
             program = program[:-6]
         program = program.replace("sorry\n", "")
         logging.debug(f"Building formatted program for program: {program}")
@@ -39,7 +39,7 @@ class LeanUtilities:
         try:
             last_message = repl_output["messages"][-1] if isinstance(repl_output, dict) else repl_output.messages[-1]
             last_message_data = last_message["data"] if isinstance(last_message,
-                                                                   dict) else last_message.data  # TODO remove this workaround
+                                                                   dict) else last_message.data
             repl_final_goals = last_message_data[len("unsolved goals\n"):]
 
             # """[GOAL]m n : ℕ

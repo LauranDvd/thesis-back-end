@@ -166,8 +166,6 @@ def initialize():
         #     ),
     }
 
-    # TODO se a dependency injection library?
-
     formalization_language_model = FormalizationLanguageModel(
         # "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
         # "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
@@ -255,7 +253,7 @@ def proof():
 
 @app.route('/proof/<int:proof_id>', methods=['GET'])
 @requires_auth
-def get_proof_by_id(proof_id): # TODO verify that the proof belongs to that user (also in the other GET reqs)
+def get_proof_by_id(proof_id):
     successful, found_proof = theorem_proving_service.retrieve_complete_proof(proof_id)
     if found_proof is None:
         return jsonify({}), 404

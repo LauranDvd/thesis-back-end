@@ -1,4 +1,3 @@
-# TODO move the test into a dedicated folder for integration tests
 import json
 import os
 
@@ -66,5 +65,3 @@ def test_get_proof_no_theorem_provided(client):
     request_query = {"model": model}
     response = client.get('/proof', query_string=request_query)
     assert response.status_code == 400
-
-# TODO: test case with model that is not available

@@ -3,8 +3,6 @@ import os
 import subprocess
 from typing import override
 
-from typing_extensions import deprecated
-
 from domain.EasyLogger import EasyLogger
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
 from domain.lean.ILeanEvaluator import ILeanEvaluator
@@ -35,7 +33,7 @@ class LakeReplFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
         print(f"result stderr: {result.stderr}")
 
         try:
-            return json.loads(result.stdout)  # Parse REPL output
+            return json.loads(result.stdout)
         except json.JSONDecodeError:
             return {"error": "Invalid REPL output", "output": result.stdout}
 

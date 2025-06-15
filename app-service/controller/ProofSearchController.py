@@ -6,7 +6,7 @@ from service.InformalProofSearchResult import InformalProofSearchResult
 from service.ProofSearchService import ProofSearchService
 
 
-class ProofSearchController: # TODO add this in app.py
+class ProofSearchController:
     def __init__(self, proof_search_service: ProofSearchService):
         self.__proof_search_service = proof_search_service
         self.__logger = EasyLogger()

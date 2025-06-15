@@ -118,7 +118,7 @@ class ProofSearchService:
             f"Formalized version of user's informal theorem (successful: {was_formalization_successful}): {formal_statement}")
 
         if not was_formalization_successful:
-            return InformalProofSearchResult(False, False, False, "", "", "")  # todo factory methods/builder
+            return InformalProofSearchResult(False, False, False, "", "", "")
 
         formal_proof, was_proof_search_successful = self.search_proof(formal_statement, model_short_name)
         if not was_proof_search_successful:
@@ -133,7 +133,6 @@ class ProofSearchService:
 
     def get_or_load_language_model(self, model_short_name: str) -> ProofSearchLanguageModel:
         return self.__model_short_name_to_config[model_short_name].get_language_model()
-        # TODO Get or load
 
     def get_language_models(self):
         return list(self.__model_short_name_to_config.keys())

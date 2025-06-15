@@ -7,7 +7,6 @@ from domain.language_model.model_factory.NonLoraModelAndTokenizerFactory import 
 from domain.lean.LeanUtilities import LeanUtilities
 
 
-# TODO better mocking
 class TestProofSearchLanguageModel(TestCase):
     def setUp(self):
         self.finetuned_model_path = "fake_path"

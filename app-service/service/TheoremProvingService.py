@@ -12,7 +12,7 @@ class TheoremProvingService:
             self,
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter,
-            theorem_queue: TheoremQueue,  # TODO add the queue in the repo?
+            theorem_queue: TheoremQueue,
             theorem_repository: TheoremRepository,
             logger: EasyLogger
     ):
