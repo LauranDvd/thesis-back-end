@@ -1,7 +1,3 @@
-import os
-import sys
-sys.path.append('../')
-
 from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
@@ -9,6 +5,7 @@ from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
 from domain.language_model.model_configuration.IModelAndPath import IModelAndPath
 
 from domain.language_model.model_configuration.NonLoraModelAndPath import NonLoraModelAndPath
+from domain.language_model.model_configuration.LoraModelAndPath import LoraModelAndPath
 from domain.EasyLogger import EasyLogger
 from repository.TheoremRepository import TheoremRepository
 from domain.language_model.model_configuration import LoraModelAndPath
@@ -24,20 +21,12 @@ class ModelService:
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter
     ) -> dict:
-        # "pythia-410M-lora":
-        #     NonLoraModelAndPath(
-        #         MODEL_PATHS["pythia-410M-lora"],
-        #         "EleutherAI/pythia-410m-deduped",
-        #         device,
-        #         lean_interact_facade,
-        #         lean_interact_facade
-        #     ),
         model_short_name_to_config = dict()
         models = self.__theorem_repository.get_language_models()
         for model in models:
             model_and_path: IModelAndPath
             if model.used_lora:
-                model_and_path = LoraModelAndPath(
+                model_and_path = LoraModelAndPath.LoraModelAndPath(
                     model.hf_path,
                     model.base_model_name,
                     device,

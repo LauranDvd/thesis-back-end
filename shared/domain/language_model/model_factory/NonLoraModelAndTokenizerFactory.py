@@ -1,8 +1,7 @@
 from typing import override
 
 import torch
-import transformers
-from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig, GPTNeoXForCausalLM, GPTNeoXTokenizerFast
+from transformers import GPTNeoXForCausalLM, GPTNeoXTokenizerFast
 
 from domain.language_model.model_factory.IModelAndTokenizerFactory import IModelAndTokenizerFactory
 

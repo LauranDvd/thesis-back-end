@@ -1,35 +1,17 @@
 # TODO move the test into a dedicated folder for integration tests
-import ast
 import json
 import os
-from unittest.mock import patch
 
 import boto3
-import moto
 import pytest
 from dotenv import load_dotenv
-from flask import g
-from moto import mock_aws, sqs
-from six import wraps
+from moto import mock_aws
 
 from app import app, initialize
 
 SUCCESSFUL_PROOF_REQUEST_STATUS_CODE = 202
 
 load_dotenv()
-
-from config import MODEL_PATHS
-
-
-# @pytest.fixture(scope='module', autouse=True)
-# def update_model_paths():
-#     print("hi")
-#     MODEL_PATHS[
-#         "pythia-160M"] = "/home/david/facultate/licenta_app/thesis-back-end/local_resources/language_models/pythia-160M-deduped/checkpoint-2000"
-#     MODEL_PATHS[
-#         "pythia-160M-lora"] = "/home/david/facultate/licenta_app/thesis-back-end/local_resources/language_models/id_2_pythia-160M-deduped_lora/checkpoint-2000"
-#
-
 
 @pytest.fixture
 def client():

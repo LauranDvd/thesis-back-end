@@ -2,32 +2,29 @@ import json
 import os
 from urllib.request import urlopen
 
+import boto3
 import jwt
-from dotenv import load_dotenv
-from six import wraps
-
-
 import torch
+from dotenv import load_dotenv
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
+from six import wraps
 from sqlalchemy import create_engine
 
 from api.TheoremQueue import TheoremQueue
 from controller.ProofSearchController import ProofSearchController
+from domain.EasyLogger import EasyLogger
 from domain.language_model.FormalizationLanguageModel import FormalizationLanguageModel
-from domain.language_model.model_configuration.NonLoraModelAndPath import NonLoraModelAndPath
 from domain.lean.LeanInteractFacade import LeanInteractFacade
 from domain.lean.MockLeanExecutor import MockLeanExecutor
 from repository.TheoremRepository import TheoremRepository
 from service.FormalizationService import FormalizationService
 from service.ProofSearchService import ProofSearchService
-
-import boto3
-
 from service.TheoremProvingService import TheoremProvingService
-from domain.EasyLogger import EasyLogger
 
-# TODO separate model inference service
+CPU_DEVICE = "cpu"
+
+CUDA_DEVICE = "cuda"
 
 load_dotenv()
 
@@ -136,7 +133,7 @@ theorem_proving_service: TheoremProvingService
 def initialize():
     global lean_interact_facade, proof_search_controller, logger, theorem_proving_service
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE
     print(f"Using device: {device}")
 
     # lean_interact_facade = LeanInteractFacade()
@@ -171,7 +168,6 @@ def initialize():
 
     # TODO se a dependency injection library?
 
-    # TODO check my notes to see what model should be used for formalization
     formalization_language_model = FormalizationLanguageModel(
         # "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
         # "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
@@ -218,9 +214,6 @@ def initialize():
 initialize()
 
 
-# TODO status codes and responses should be like in the written thesis
-
-# TODO: send theorem with 'POST'; poll its proof with 'GET'
 @app.route('/proof', methods=['POST'])
 @requires_auth
 def proof():

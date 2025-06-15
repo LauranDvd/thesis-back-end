@@ -37,7 +37,10 @@ class LeanUtilities:
             return LeanUtilities.ERROR_FORMATTED_PROGRAM
 
         try:
-            repl_final_goals = repl_output.messages[-1].data[len("unsolved goals\n"):]
+            last_message = repl_output["messages"][-1] if isinstance(repl_output, dict) else repl_output.messages[-1]
+            last_message_data = last_message["data"] if isinstance(last_message,
+                                                                   dict) else last_message.data  # TODO remove this workaround
+            repl_final_goals = last_message_data[len("unsolved goals\n"):]
 
             # """[GOAL]m n : ℕ
             #   h : Nat.coprime m n
