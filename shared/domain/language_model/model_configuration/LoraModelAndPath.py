@@ -1,10 +1,10 @@
 from typing_extensions import override
 
-from shared.domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
-from shared.domain.language_model.model_configuration.IModelAndPath import IModelAndPath
-from shared.domain.language_model.model_factory.LoraModelAndTokenizerFactory import LoraModelAndTokenizerFactory
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
+from domain.language_model.model_configuration.IModelAndPath import IModelAndPath
+from domain.language_model.model_factory.LoraModelAndTokenizerFactory import LoraModelAndTokenizerFactory
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 
 class LoraModelAndPath(IModelAndPath):

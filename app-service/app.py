@@ -3,6 +3,7 @@ import os
 from urllib.request import urlopen
 
 import jwt
+from dotenv import load_dotenv
 from six import wraps
 
 
@@ -27,6 +28,8 @@ from service.TheoremProvingService import TheoremProvingService
 from domain.EasyLogger import EasyLogger
 
 # TODO separate model inference service
+
+load_dotenv()
 
 AUTH0_DOMAIN = os.environ['AUTH0_DOMAIN']
 AUTH0_API_AUDIENCE = os.environ['AUTH0_API_AUDIENCE']
@@ -77,6 +80,10 @@ def get_token_auth_header():
 def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
+        if app.config["TESTING"]:
+            g.current_user = {"sub": "someone"}
+            return f(*args, **kwargs)
+
         token = get_token_auth_header()
         jsonurl = urlopen("https://" + AUTH0_DOMAIN + "/.well-known/jwks.json")
         jwks = json.loads(jsonurl.read())

@@ -1,9 +1,9 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from shared.domain.lean.LakeReplFacade import LakeReplFacade
-from shared.domain.lean.LeanInteractFacade import LeanInteractFacade
-from shared.domain.lean.LeanUtilities import LeanUtilities
+from domain.lean.LakeReplFacade import LakeReplFacade
+from domain.lean.LeanInteractFacade import LeanInteractFacade
+from domain.lean.LeanUtilities import LeanUtilities
 
 
 class TestLeanUtilities(TestCase):

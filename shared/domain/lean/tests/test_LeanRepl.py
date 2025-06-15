@@ -2,7 +2,7 @@ from unittest import TestCase
 
 from numpy.ma.testutils import assert_equal
 
-from shared.domain.lean.LakeReplFacade import LakeReplFacade
+from domain.lean.LakeReplFacade import LakeReplFacade
 
 
 class TestLakeReplFacade(TestCase):

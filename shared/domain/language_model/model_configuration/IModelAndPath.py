@@ -1,4 +1,4 @@
-from shared.domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
+from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
 
 
 class IModelAndPath:

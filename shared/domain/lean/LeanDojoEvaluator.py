@@ -1,6 +1,6 @@
 from typing import override
 
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 
 class LeanDojoEvaluator(ILeanEvaluator):

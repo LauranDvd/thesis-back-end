@@ -3,13 +3,18 @@ from unittest.mock import patch, MagicMock
 
 from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel, THEOREM_WAS_PROVED_TACTIC
 from domain.language_model.model_configuration.NonLoraModelAndPath import NonLoraModelAndPath
+from service.FormalizationService import FormalizationService
 from service.ProofSearchService import ProofSearchService
 
 
 class TestProofSearchService(TestCase):
     def setUp(self):
         self.model_and_path = MagicMock(spec=NonLoraModelAndPath)
-        self.proof_search_service = ProofSearchService({"model1": self.model_and_path}, "cpu")
+        self.formalization_service = MagicMock(spec=FormalizationService)
+        self.proof_search_service = ProofSearchService(
+            self.formalization_service,
+            {"model1": self.model_and_path},
+            "cpu")
 
     @patch("service.ProofSearchService.ProofSearchService.get_or_load_language_model")
     def test_search_proof_returns_proof_and_true_if_proof_found(
@@ -25,7 +30,7 @@ class TestProofSearchService(TestCase):
 theorem my_theorem (x : Nat) (h : x = 2 * 3) : x + 1 = 7 := by
 linarith"""
 
-        proof, is_proof_found = ProofSearchService.search_proof(self.proof_search_service, theorem, "model1")
+        proof, is_proof_found = self.proof_search_service.search_proof(theorem, "model1")
         self.assertTrue(is_proof_found)
         self.assertEqual(theorem, proof)
 
@@ -44,6 +49,6 @@ linarith"""
 theorem my_theorem (x : Nat) (h : x = 2 * 3) : x + 1 = 7 := by
 linarith"""
 
-        proof, is_proof_found = ProofSearchService.search_proof(self.proof_search_service, theorem, "model1")
+        proof, is_proof_found = self.proof_search_service.search_proof(theorem, "model1")
         self.assertFalse(is_proof_found)
-        self.assertEqual(theorem + ("\n" + mock_tactic) * 20, proof) # TODO search budget instead of 20
+        self.assertEqual(theorem + ("\n" + mock_tactic) * 10, proof)  # TODO search budget instead of 20

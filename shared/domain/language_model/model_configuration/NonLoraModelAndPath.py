@@ -1,10 +1,10 @@
 from typing import override
 
-from shared.domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
-from shared.domain.language_model.model_configuration.IModelAndPath import IModelAndPath
-from shared.domain.language_model.model_factory.NonLoraModelAndTokenizerFactory import NonLoraModelAndTokenizerFactory
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
+from domain.language_model.model_configuration.IModelAndPath import IModelAndPath
+from domain.language_model.model_factory.NonLoraModelAndTokenizerFactory import NonLoraModelAndTokenizerFactory
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 class NonLoraModelAndPath(IModelAndPath):
     def __init__(

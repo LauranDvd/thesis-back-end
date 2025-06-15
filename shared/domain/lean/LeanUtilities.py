@@ -1,9 +1,9 @@
 import logging
 import sys
 
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.EasyLogger import EasyLogger
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 
 class LeanUtilities:

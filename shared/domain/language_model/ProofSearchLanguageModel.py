@@ -2,13 +2,11 @@ import logging
 import sys
 import random
 
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.language_model.model_factory import IModelAndTokenizerFactory
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
-from shared.domain.lean.LakeReplFacade import LakeReplFacade
-from shared.domain.lean.LeanInteractFacade import LeanInteractFacade
-from shared.domain.lean.LeanUtilities import LeanUtilities
+from domain.EasyLogger import EasyLogger
+from domain.language_model.model_factory import IModelAndTokenizerFactory
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.lean.LeanUtilities import LeanUtilities
 
 ERROR_TACTIC = "error_tactic"
 THEOREM_WAS_PROVED_TACTIC = "theorem_already_proved"

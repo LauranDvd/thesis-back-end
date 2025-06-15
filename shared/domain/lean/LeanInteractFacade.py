@@ -4,10 +4,10 @@ from typing import override
 from lean_interact import LeanREPLConfig, TempRequireProject, AutoLeanServer, LeanServer, Command
 from lean_interact.interface import LeanError
 
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
-from shared.exception.LeanException import LeanException
+from domain.EasyLogger import EasyLogger
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
+from exception.LeanException import LeanException
 
 
 class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
