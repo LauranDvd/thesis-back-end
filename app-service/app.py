@@ -1,10 +1,13 @@
-import sys
+import json
 import os
+from urllib.request import urlopen
 
-sys.path.append('../')
+import jwt
+from six import wraps
+
 
 import torch
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from sqlalchemy import create_engine
 
@@ -25,8 +28,97 @@ from domain.EasyLogger import EasyLogger
 
 # TODO separate model inference service
 
+AUTH0_DOMAIN = os.environ['AUTH0_DOMAIN']
+AUTH0_API_AUDIENCE = os.environ['AUTH0_API_AUDIENCE']
+AUTH0_ALGORITHMS = [os.environ['AUTH0_ALGORITHM']]
+
 app = Flask(__name__)
 CORS(app)
+
+
+class AuthError(Exception):
+    def __init__(self, error, status_code):
+        self.error = error
+        self.status_code = status_code
+
+
+@app.errorhandler(AuthError)
+def handle_auth_error(exception):
+    response = jsonify(exception.error)
+    response.status_code = exception.status_code
+    return response
+
+
+def get_token_auth_header():
+    auth = request.headers.get("Authorization", None)
+    if not auth:
+        raise AuthError({"code": "authorization_header_missing",
+                         "description":
+                             "Authorization header is expected"}, 401)
+
+    auth_parts = auth.split()
+
+    if auth_parts[0].lower() != "bearer":
+        raise AuthError({"code": "invalid_header",
+                         "description":
+                             "Authorization header must be"
+                             " Bearer token"}, 401)
+    elif len(auth_parts) == 1:
+        raise AuthError({"code": "invalid_header",
+                         "description": "Token not found"}, 401)
+    elif len(auth_parts) > 2:
+        raise AuthError({"code": "invalid_header",
+                         "description":
+                             "Authorization header must be"
+                             " Bearer token"}, 401)
+    return auth_parts[1]
+
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = get_token_auth_header()
+        jsonurl = urlopen("https://" + AUTH0_DOMAIN + "/.well-known/jwks.json")
+        jwks = json.loads(jsonurl.read())
+        unverified_header = jwt.get_unverified_header(token)
+        public_key = None
+        for key in jwks["keys"]:
+            if key["kid"] == unverified_header["kid"]:
+                public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+        if public_key:
+            try:
+                payload = jwt.decode(
+                    token,
+                    public_key,
+                    algorithms=AUTH0_ALGORITHMS,
+                    audience=AUTH0_API_AUDIENCE,
+                    issuer="https://"+AUTH0_DOMAIN+"/"
+                )
+            except jwt.ExpiredSignatureError:
+                raise AuthError({"code": "token_expired",
+                                "description": "token is expired"}, 401)
+            except jwt.InvalidAudienceError:
+                raise AuthError({"code": "invalid_audience",
+                                "description":
+                                    "incorrect audience,"
+                                    " please check the audience"}, 401)
+            except jwt.InvalidIssuerError:
+                raise AuthError({"code": "invalid_issuer",
+                                "description":
+                                    "incorrect issuer,"
+                                    " please check the issuer"}, 401)
+            except Exception:
+                raise AuthError({"code": "invalid_header",
+                                "description":
+                                    "Unable to parse authentication"
+                                    " token."}, 401)
+
+            g.current_user = payload
+            return f(*args, **kwargs)
+        raise AuthError({"code": "invalid_header",
+                        "description": "Unable to find appropriate key"}, 401)
+    return decorated
+
 
 lean_interact_facade: LeanInteractFacade
 proof_search_controller: ProofSearchController
@@ -92,7 +184,7 @@ def initialize():
              "@" + os.environ['AWS_RDS_ENDPOINT'] + ":" + os.environ['AWS_RDS_PORT'] + "/" + \
              os.environ['AWS_RDS_DB_NAME']
     db_engine = create_engine(db_url, pool_pre_ping=True)
-    theorem_repository = TheoremRepository(db_engine)
+    theorem_repository = TheoremRepository(db_engine, EasyLogger())
 
     theorem_proving_service = TheoremProvingService(
         lean_interact_facade,
@@ -123,6 +215,7 @@ initialize()
 
 # TODO: send theorem with 'POST'; poll its proof with 'GET'
 @app.route('/proof', methods=['POST'])
+@requires_auth
 def proof():
     # if request.method == 'POST':
     #     request_data = request.get_json()
@@ -143,6 +236,8 @@ def proof():
         theorem = request_data.get("theorem")
         model_short_name = request_data.get("model")
 
+        user_id = g.current_user.get("sub")
+
         if not theorem_proving_service.is_language_model_available(model_short_name):
             return jsonify({}), 404
 
@@ -151,7 +246,7 @@ def proof():
             return jsonify({"lean_error": lean_error}), 400
 
         # 2. send on queue, add incomplete proof to the DB
-        proof_id = theorem_proving_service.send_proof_request(theorem, model_short_name)
+        proof_id = theorem_proving_service.send_proof_request(theorem, model_short_name, user_id)
         logger.debug(f"Proof ID for the received theorem: {proof_id}")
 
         return jsonify({"proof_id": proof_id}), 202
@@ -159,7 +254,8 @@ def proof():
 
 
 @app.route('/proof/<int:proof_id>', methods=['GET'])
-def get_proof_by_id(proof_id):
+@requires_auth
+def get_proof_by_id(proof_id): # TODO verify that the proof belongs to that user (also in the other GET reqs)
     successful, found_proof = theorem_proving_service.retrieve_complete_proof(proof_id)
     if found_proof is None:
         return jsonify({}), 404
@@ -168,6 +264,7 @@ def get_proof_by_id(proof_id):
 
 
 @app.route('/proof/informal/<int:proof_id>', methods=['GET'])
+@requires_auth
 def get_informal_proof_by_id(proof_id):
     informal_proof, was_successful, formalized_theorem, formal_proof = theorem_proving_service.retrieve_complete_informal_proof(
         proof_id)
@@ -179,18 +276,21 @@ def get_informal_proof_by_id(proof_id):
 
 
 @app.route('/proof/informal', methods=['POST'])
+@requires_auth
 def informal_proof():
     if request.method == 'POST':
         request_data = request.get_json()
         informal_theorem = request_data.get("informal_theorem")
         model_short_name = request_data.get("model")
 
+        user_id = g.current_user.get("sub")
+
         logger.info(f"Received informal theorem: {informal_theorem}. Requested model: {model_short_name}")
 
         if not theorem_proving_service.is_language_model_available(model_short_name):
             return jsonify({}), 404
 
-        proof_id = theorem_proving_service.send_informal_proof_request(informal_theorem, model_short_name)
+        proof_id = theorem_proving_service.send_informal_proof_request(informal_theorem, user_id, model_short_name)
         logger.debug(f"Proof ID for the received theorem: {proof_id}")
 
         return jsonify({"proof_id": proof_id}), 202
@@ -217,6 +317,7 @@ def informal_proof():
 
 
 @app.route('/proof/fill', methods=['POST'])
+@requires_auth
 def proof_fill():
     if request.method == 'POST':
         request_data = request.get_json()
@@ -224,10 +325,12 @@ def proof_fill():
             "theorem_and_partial_proof")
         model_short_name = request_data.get("model")
 
+        user_id = g.current_user.get("sub")
+
         if not theorem_proving_service.is_language_model_available(model_short_name):
             return jsonify({}), 404
 
-        proof_id = theorem_proving_service.send_proof_fill_request(theorem_and_partial_proof, model_short_name)
+        proof_id = theorem_proving_service.send_proof_fill_request(theorem_and_partial_proof, user_id, model_short_name)
         logger.debug(f"Proof ID for the received theorem: {proof_id}")
 
         return jsonify({"proof_id": proof_id}), 202
@@ -245,7 +348,19 @@ def proof_fill():
     return jsonify({"error": "Bad request"}), 400
 
 
+@app.route('/proof/history', methods=['GET'])
+@requires_auth
+def get_proof_history():
+    if request.method == 'GET':
+        user_id = g.current_user.get("sub")
+        logger.debug(f"Getting proof history for user {user_id}")
+        proof_history = theorem_proving_service.get_proof_history(user_id)
+        logger.debug(f"Will return proof history of size {len(proof_history)} to user {user_id}")
+        return jsonify(proof_history), 200
+    return jsonify({"error": "Bad request"}), 400
+
 @app.route('/language_model', methods=['GET'])
+@requires_auth
 def language_model():
     # if request.method == 'GET':
     #     return jsonify(proof_search_controller.get_language_models())

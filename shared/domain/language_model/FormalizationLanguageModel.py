@@ -1,11 +1,7 @@
 from openai import OpenAI
-import os
-import sys
-sys.path.append('../../../model-inference-service/domain/')
-
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.EasyLogger import EasyLogger
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
 
 # TODO better few shot prompts
 FORMALIZATION_PROMPT = r"""You are given a mathematical theorem in LaTeX format.
