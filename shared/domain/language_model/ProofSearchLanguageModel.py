@@ -2,13 +2,13 @@ import logging
 import sys
 import random
 
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.language_model.model_factory import IModelAndTokenizerFactory
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
-from shared.domain.lean.LakeReplFacade import LakeReplFacade
-from shared.domain.lean.LeanInteractFacade import LeanInteractFacade
-from shared.domain.lean.LeanUtilities import LeanUtilities
+import torch
+
+from domain.EasyLogger import EasyLogger
+from domain.language_model.model_factory import IModelAndTokenizerFactory
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
+from domain.lean.LeanUtilities import LeanUtilities
 
 ERROR_TACTIC = "error_tactic"
 THEOREM_WAS_PROVED_TACTIC = "theorem_already_proved"
@@ -59,3 +59,47 @@ class ProofSearchLanguageModel:
         if new_formatted_proof != LeanUtilities.ERROR_FORMATTED_PROGRAM:
             return next_tactic
         return ERROR_TACTIC
+
+    def get_several_next_tactics(self, goals: str, number_of_tactics: int) -> tuple[list[str], list[float]]:
+        inputs = self.__tokenizer.encode(goals, return_tensors="pt").to(self.__device)
+
+        tactics, scores = [], []
+        output = self.__model.generate(inputs, max_new_tokens=256, pad_token_id=self.__tokenizer.eos_token_id,
+                                       num_return_sequences=number_of_tactics,
+                                       # num_beams=number_of_tactics,
+                                       return_dict_in_generate=True,
+                                       do_sample=True,
+                                       output_scores=True,
+                                       temperature=1
+                                       )
+
+        output_tokens = output.sequences[:, inputs.shape[1]:]
+        tactics.extend(self.__tokenizer.batch_decode(
+            output_tokens,
+            skip_special_tokens=True
+        ))
+        # scores.extend([0 for _ in range(number_of_tactics)])
+
+        if output.scores:
+            self.__logger.debug("Will compute scores of the model's output")
+            new_scores = []
+            for tactic_index in range(number_of_tactics):
+                tactic_log_prob = 0
+                generated_tokens = output_tokens[tactic_index]
+                for step in range(generated_tokens.shape[0]):
+                    if step >= len(output.scores):
+                        break
+                    token_id = generated_tokens[step].item()
+                    token_scores = output.scores[step]
+                    log_prob = torch.nn.functional.log_softmax(token_scores, dim=-1)
+                    tactic_log_prob += log_prob[tactic_index, token_id].item()
+                    if token_id == self.__tokenizer.eos_token_id:
+                        break
+                new_scores.append(tactic_log_prob)
+            scores.extend(new_scores)
+            self.__logger.debug("Computed scores for model's output")
+        else:
+            self.__logger.warn("Model output has no scores")
+            scores.extend([0 for _ in range(number_of_tactics)])
+
+        return tactics, scores

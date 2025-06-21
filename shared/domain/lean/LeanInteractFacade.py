@@ -4,29 +4,32 @@ from typing import override
 from lean_interact import LeanREPLConfig, TempRequireProject, AutoLeanServer, LeanServer, Command
 from lean_interact.interface import LeanError
 
-from shared.domain.EasyLogger import EasyLogger
-from shared.domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
-from shared.domain.lean.ILeanEvaluator import ILeanEvaluator
-from shared.exception.LeanException import LeanException
+from domain.EasyLogger import EasyLogger
+from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
+from domain.lean.ILeanEvaluator import ILeanEvaluator
+from exception.LeanException import LeanException
 
 
 class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
     MAXIMUM_RUN_ATTEMPTS = 3
 
-    def __init__(self):
+    def __init__(self, test_mode=False):
         self.__logger = EasyLogger()
-        self.__initialize_lean_environment()
+        if not test_mode:
+            self.__initialize_lean_environment()
 
     @override
     def evaluate(self, lean_code: str):
         self.__logger.debug(f"Will run this Lean code: {lean_code}")
+
+        lean_code = "import Mathlib\n\n" + lean_code
 
         ran_successfully = False
         run_attempts = 0
         lean_output = None
         while not ran_successfully and run_attempts < LeanInteractFacade.MAXIMUM_RUN_ATTEMPTS:
             self.__logger.debug(f"Will run code on the lean server")
-            lean_output = self.__lean_server.run(Command(cmd=lean_code, all_tactics=True, env=self.env_number))
+            lean_output = self.__lean_server.run(Command(cmd=lean_code, all_tactics=True)) #, env=self.env_number))
             self.__logger.debug(f"Finished running code on the lean server")
             if type(lean_output) is LeanError:
                 if lean_output.message == "Unknown environment.": # todo add constants

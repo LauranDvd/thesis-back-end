@@ -1,6 +1,4 @@
 import os
-import sys
-sys.path.append('../')
 
 from sqlalchemy import create_engine
 
@@ -8,9 +6,7 @@ from domain.language_model.FormalizationLanguageModel import FormalizationLangua
 from repository.TheoremRepository import TheoremRepository
 from service.FormalizationService import FormalizationService
 from service.ModelService import ModelService
-from domain.lean.LeanInteractFacade import LeanInteractFacade
 from domain.lean.MockLeanExecutor import MockLeanExecutor
-
 
 import boto3
 
@@ -19,6 +15,8 @@ from domain.EasyLogger import EasyLogger
 
 from dotenv import load_dotenv
 from service.ProofSearchService import ProofSearchService
+
+FORMALIZATION_MODEL_NAME = "gpt-4.1-mini-2025-04-14"
 
 if __name__ == '__main__':
     load_dotenv()
@@ -30,9 +28,10 @@ if __name__ == '__main__':
 
     # lean_interact_facade = LeanInteractFacade()
     lean_interact_facade = MockLeanExecutor()
+    # lean_interact_facade = LakeReplFacade()
 
     formalization_language_model = FormalizationLanguageModel(
-        "gpt-4.1-mini-2025-04-14",
+        FORMALIZATION_MODEL_NAME,
         os.getenv('OPENAI_KEY'),
         lean_interact_facade,
         lean_interact_facade
@@ -51,6 +50,8 @@ if __name__ == '__main__':
                                                                               lean_interact_facade)
     proof_search_service = ProofSearchService(
         formalization_service,
+        lean_interact_facade,
+        lean_interact_facade,
         model_short_name_to_config,
         device
     )

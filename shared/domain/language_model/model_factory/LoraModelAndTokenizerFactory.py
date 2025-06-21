@@ -3,7 +3,7 @@ from typing import override
 import transformers
 from peft import PeftConfig, PeftModel
 
-from shared.domain.language_model.model_factory.IModelAndTokenizerFactory import IModelAndTokenizerFactory
+from domain.language_model.model_factory.IModelAndTokenizerFactory import IModelAndTokenizerFactory
 
 
 class LoraModelAndTokenizerFactory(IModelAndTokenizerFactory):

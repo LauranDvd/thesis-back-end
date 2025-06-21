@@ -5,6 +5,8 @@ from botocore.client import BaseClient
 
 from domain.EasyLogger import EasyLogger
 
+MESSAGE_GROUP_ID = "1"
+
 
 class TheoremQueue:
     def __init__(self, sqs_client: BaseClient, sqs_url: str, logger: EasyLogger):
@@ -16,7 +18,7 @@ class TheoremQueue:
         sqs_response = self.__sqs_client.send_message(
             QueueUrl=self.__sqs_url,
             MessageBody=json.dumps({'theorem': theorem, 'proof_id': proof_id, 'model': model, 'is_informal': False, 'is_fill': False}),
-            MessageGroupId="1",
+            MessageGroupId=MESSAGE_GROUP_ID,
             MessageDeduplicationId=str(uuid.uuid4())
         )
         self.__logger.debug(f"SQS response: {sqs_response}")
@@ -25,7 +27,7 @@ class TheoremQueue:
         sqs_response = self.__sqs_client.send_message(
             QueueUrl=self.__sqs_url,
             MessageBody=json.dumps({'theorem': theorem_with_partial_proof, 'proof_id': proof_id, 'model': model, 'is_informal': False, 'is_fill': True}),
-            MessageGroupId="1",
+            MessageGroupId=MESSAGE_GROUP_ID,
             MessageDeduplicationId=str(uuid.uuid4())
         )
         self.__logger.debug(f"SQS response: {sqs_response}")
@@ -34,7 +36,7 @@ class TheoremQueue:
         sqs_response = self.__sqs_client.send_message(
             QueueUrl=self.__sqs_url,
             MessageBody=json.dumps({'theorem': informal_theorem, 'proof_id': proof_id, 'model': model, 'is_informal': True, 'is_fill': False}),
-            MessageGroupId="1",
+            MessageGroupId=MESSAGE_GROUP_ID,
             MessageDeduplicationId=str(uuid.uuid4())
         )
         self.__logger.debug(f"SQS response: {sqs_response}")

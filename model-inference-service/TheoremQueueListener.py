@@ -40,8 +40,6 @@ class TheoremQueueListener:
             )
             self.__logger.debug(f"Message deleted from SQS: {receipt_handle}")
 
-            # TODO check if it's informal or fill request
-
             message_json = json.loads(message)
             theorem = message_json["theorem"]
             model_short_name = message_json["model"]

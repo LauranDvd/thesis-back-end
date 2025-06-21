@@ -1,10 +1,5 @@
-import os
-import sys
-sys.path.append('../')
-
 from domain.EasyLogger import EasyLogger
-from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel, THEOREM_WAS_PROVED_TACTIC
-from domain.language_model.ProofSearchLanguageModel import ERROR_TACTIC
+from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
 from service.FormalizationService import FormalizationService
 
 
