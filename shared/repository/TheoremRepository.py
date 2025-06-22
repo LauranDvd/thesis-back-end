@@ -1,4 +1,5 @@
 from sqlalchemy import Engine, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import sessionmaker
 
 from domain.EasyLogger import EasyLogger
@@ -8,6 +9,8 @@ from service.InformalProofSearchResult import InformalProofSearchResult
 
 
 class TheoremRepository:
+    INVALID_ID = -1
+
     def __init__(self, db_engine: Engine, logger: EasyLogger):
         self.__db_engine = db_engine
         self.__session_local = sessionmaker(bind=db_engine)
@@ -21,6 +24,9 @@ class TheoremRepository:
             )
             execution_result = session.execute(statement).scalar()
             return execution_result is not None
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return False
         finally:
             session.close()
 
@@ -30,6 +36,9 @@ class TheoremRepository:
             statement = select(LanguageModelEntity)
             execution_result = session.execute(statement).all()
             return [row[0] for row in execution_result]
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return []
         finally:
             session.close()
 
@@ -39,6 +48,9 @@ class TheoremRepository:
             statement = select(ProofEntity).where(ProofEntity.user_id == user_id)
             execution_result = session.execute(statement).all()
             return [row[0] for row in execution_result]
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return []
         finally:
             session.close()
 
@@ -48,6 +60,9 @@ class TheoremRepository:
             statement = select(ProofEntity).where(ProofEntity.proof_id == proof_id)
             execution_result = session.execute(statement).all()
             return [row[0] for row in execution_result][0]
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return ProofEntity()
         finally:
             session.close()
 
@@ -66,6 +81,9 @@ class TheoremRepository:
             session.add(proof)
             session.commit()
             session.refresh(proof)
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return TheoremRepository.INVALID_ID
         finally:
             session.close()
 
@@ -86,6 +104,9 @@ class TheoremRepository:
             session.add(proof)
             session.commit()
             session.refresh(proof)
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return TheoremRepository.INVALID_ID
         finally:
             session.close()
 
@@ -102,6 +123,9 @@ class TheoremRepository:
             session.add(formalization)
             session.commit()
             session.refresh(formalization)
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return TheoremRepository.INVALID_ID
         finally:
             session.close()
 
@@ -119,6 +143,9 @@ class TheoremRepository:
                 self.__logger.debug(f"Formalization {formalization_id} not found")
                 return None
             return [row[0] for row in execution_result][0]
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
+            return None
         finally:
             session.close()
 
@@ -135,6 +162,8 @@ class TheoremRepository:
             old_proof_entity.successful = successful
 
             session.commit()
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
         finally:
             session.close()
 
@@ -162,6 +191,8 @@ class TheoremRepository:
             old_proof_entity.statement_formalization_id = statement_formalization_id
 
             session.commit()
+        except SQLAlchemyError as error:
+            self.__logger.error(f"SQL Alchemy error: {error}.")
         finally:
             session.close()
 

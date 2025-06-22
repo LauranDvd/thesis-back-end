@@ -41,7 +41,7 @@ h : x + 1 = 5
 
     @override
     def is_theorem_solved(self, repl_output) -> bool:
-        x = random.randint(0, 20)
+        x = random.randint(0, 100)
         return x == 0
 
     @override
@@ -50,5 +50,5 @@ h : x + 1 = 5
 
     @override
     def get_error(self, evaluation_output) -> str:
+        # return "error: mock error at line 15"
         return ""
-

@@ -29,5 +29,3 @@ class ProofClientDto:
             "" if proof_formalization is None else proof_formalization.informal_text,
             proof_entity.successful
         )
-
-

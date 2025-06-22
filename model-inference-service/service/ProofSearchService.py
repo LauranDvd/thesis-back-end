@@ -13,7 +13,7 @@ from service.InformalProofSearchResult import InformalProofSearchResult
 
 
 class ProofSearchService:
-    SEARCH_BUDGET = 100
+    SEARCH_BUDGET = 10
     SEARCH_BUDGET_PER_STEP = 4
 
     def __init__(

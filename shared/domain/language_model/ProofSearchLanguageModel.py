@@ -3,6 +3,8 @@ import sys
 import random
 
 import torch
+from transformers import PreTrainedTokenizerBase
+from transformers.modeling_utils import SpecificPreTrainedModelType
 
 from domain.EasyLogger import EasyLogger
 from domain.language_model.model_factory import IModelAndTokenizerFactory
@@ -40,17 +42,21 @@ class ProofSearchLanguageModel:
         if formatted_theorem == LeanUtilities.PROVED_FORMATTED_PROGRAM:
             return THEOREM_WAS_PROVED_TACTIC
 
-        input_ids = self.__tokenizer.encode(formatted_theorem, return_tensors='pt')
-        out = self.__model.generate(
-            input_ids,
-            max_new_tokens=256,
-            num_return_sequences=3,
-            do_sample=True,
-            temperature=1,
-            pad_token_id=self.__tokenizer.eos_token_id
-        )
+        try:
+            input_ids = self.__tokenizer.encode(formatted_theorem, return_tensors='pt')
+            out = self.__model.generate(
+                input_ids,
+                max_new_tokens=256,
+                num_return_sequences=3,
+                do_sample=True,
+                temperature=1,
+                pad_token_id=self.__tokenizer.eos_token_id
+            )
+            next_tactic = self.__tokenizer.decode(random.choice(out)[input_ids.shape[1]:], skip_special_tokens=True)
+        except ValueError as error:
+            self.__logger.error(f"Error while generating model's response: {error}. Will return {ERROR_TACTIC}.")
+            return ERROR_TACTIC
 
-        next_tactic = self.__tokenizer.decode(random.choice(out)[input_ids.shape[1]:], skip_special_tokens=True)
         self.__logger.debug(f"decoded model output: {next_tactic}")
 
         new_proof = theorem + "\n" + next_tactic
@@ -61,23 +67,26 @@ class ProofSearchLanguageModel:
         return ERROR_TACTIC
 
     def get_several_next_tactics(self, goals: str, number_of_tactics: int) -> tuple[list[str], list[float]]:
-        inputs = self.__tokenizer.encode(goals, return_tensors="pt").to(self.__device)
+        try:
+            inputs = self.__tokenizer.encode(goals, return_tensors="pt").to(self.__device)
+            tactics, scores = [], []
+            output = self.__model.generate(inputs, max_new_tokens=256, pad_token_id=self.__tokenizer.eos_token_id,
+                                           num_return_sequences=number_of_tactics,
+                                           # num_beams=number_of_tactics,
+                                           return_dict_in_generate=True,
+                                           do_sample=True,
+                                           output_scores=True,
+                                           temperature=1
+                                           )
 
-        tactics, scores = [], []
-        output = self.__model.generate(inputs, max_new_tokens=256, pad_token_id=self.__tokenizer.eos_token_id,
-                                       num_return_sequences=number_of_tactics,
-                                       # num_beams=number_of_tactics,
-                                       return_dict_in_generate=True,
-                                       do_sample=True,
-                                       output_scores=True,
-                                       temperature=1
-                                       )
-
-        output_tokens = output.sequences[:, inputs.shape[1]:]
-        tactics.extend(self.__tokenizer.batch_decode(
-            output_tokens,
-            skip_special_tokens=True
-        ))
+            output_tokens = output.sequences[:, inputs.shape[1]:]
+            tactics.extend(self.__tokenizer.batch_decode(
+                output_tokens,
+                skip_special_tokens=True
+            ))
+        except ValueError as error:
+            self.__logger.error(f"Error while generating model's response: {error}. Will return empty lists.")
+            return [], []
         # scores.extend([0 for _ in range(number_of_tactics)])
 
         if output.scores:

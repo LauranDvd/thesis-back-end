@@ -58,8 +58,14 @@ class FormalizationLanguageModel:
             lean_evaluation_interpreter: ILeanEvaluationInterpreter
     ):
         self.__model_name = model_name
-        self.__openai_client = OpenAI(api_key=openai_api_key)
         self.__logger = EasyLogger()
+
+        try:
+            self.__openai_client = OpenAI(api_key=openai_api_key)
+        except TypeError as error:
+            self.__logger.error(f"Couldn't initialize OpenAI client. Error: {error}")
+            self.__openai_client = None
+
         self.__lean_evaluator = lean_evaluator
         self.__lean_evaluation_interpreter = lean_evaluation_interpreter
 
@@ -94,6 +100,10 @@ class FormalizationLanguageModel:
         return text_model_response.split("[INFORMAL]")[-1].strip(), True
 
     def __query_model(self, prompt):
+        if self.__openai_client is None:
+            self.__logger.error("OpenAI client wasn't initialized.")
+            return "OpenAI client not initialized. Can't query the model."
+
         raw_model_response = self.__openai_client.chat.completions.create(
             model=self.__model_name,
             messages=[{"role": "user", "content": prompt}],

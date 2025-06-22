@@ -1,0 +1,2 @@
+class ClientRequestException(Exception):
+    pass

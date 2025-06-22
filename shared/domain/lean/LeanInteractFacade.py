@@ -1,8 +1,8 @@
-import json
 from typing import override
 
-from lean_interact import LeanREPLConfig, TempRequireProject, AutoLeanServer, LeanServer, Command
-from lean_interact.interface import LeanError
+from lean_interact import LeanREPLConfig, TempRequireProject, AutoLeanServer, Command
+from lean_interact.interface import LeanError, CommandResponse
+from pydantic import PydanticUserError
 
 from domain.EasyLogger import EasyLogger
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
@@ -29,11 +29,12 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
         lean_output = None
         while not ran_successfully and run_attempts < LeanInteractFacade.MAXIMUM_RUN_ATTEMPTS:
             self.__logger.debug(f"Will run code on the lean server")
-            lean_output = self.__lean_server.run(Command(cmd=lean_code, all_tactics=True)) #, env=self.env_number))
+            lean_output = self.__run_lean_code_safely(lean_code)
             self.__logger.debug(f"Finished running code on the lean server")
-            if type(lean_output) is LeanError:
-                if lean_output.message == "Unknown environment.": # todo add constants
-                    self.__logger.debug("The Lean executor does not recognize the environment. Will reinitialize the environment.")
+            if isinstance(lean_output, LeanError):
+                if lean_output.message == "Unknown environment.":  # todo add constants
+                    self.__logger.debug(
+                        "The Lean executor does not recognize the environment. Will reinitialize the environment.")
                     self.__lean_server.clear_session_cache(force=True)
                     self.__initialize_lean_environment()
             else:
@@ -66,19 +67,35 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
         raise LeanException("There are no errors in the provided evaluation output")
 
     def __initialize_lean_environment(self):
-        lean_config = LeanREPLConfig(project=TempRequireProject("mathlib"), verbose=True)
-        self.__lean_server = AutoLeanServer(lean_config)
-        self.__lean_server.clear_session_cache(force=True)
-        env_init_code = """
-                import Mathlib
-                import Aesop
+        try:
+            lean_config = LeanREPLConfig(project=TempRequireProject("mathlib"), verbose=True)
+            self.__lean_server = AutoLeanServer(lean_config)
+            self.__lean_server.clear_session_cache(force=True)
+            env_init_code = """
+                    import Mathlib
+                    import Aesop
+    
+                    set_option maxHeartbeats 0
+    
+                    open BigOperators Real Nat Topology Rat
+                    """
+        except (Exception, RuntimeError) as error:  # the library can throw many types of errors
+            self.__logger.error(f"Initializing Lean env with lean-interact failed: {error}")
+            self.env_number = 0
+            return
 
-                set_option maxHeartbeats 0
-
-                open BigOperators Real Nat Topology Rat
-                """
         self.__logger.debug("will run env init code on the Lean server")
-        env_init_lean_output = self.__lean_server.run(Command(cmd=env_init_code, all_tactics=True))
+        env_init_lean_output = self.__run_lean_code_safely(env_init_code)
         self.__logger.debug(f"env init lean output: {env_init_lean_output}")
-        self.env_number = env_init_lean_output.env
 
+        if isinstance(env_init_lean_output, LeanError):
+            self.env_number = 0
+        else:
+            self.env_number = env_init_lean_output.env
+
+    def __run_lean_code_safely(self, lean_code: str) -> CommandResponse | LeanError:
+        try:
+            return self.__lean_server.run(Command(cmd=lean_code, all_tactics=True))  # , env=self.env_number))
+        except (ValueError, PydanticUserError) as error:
+            self.__logger.error(f"Running Lean code failed: {error}")
+            return LeanError(message="The lean server returned an error")
