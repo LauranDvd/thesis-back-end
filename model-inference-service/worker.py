@@ -1,4 +1,6 @@
 import os
+import sys
+sys.path.append("/shared")
 
 from sqlalchemy import create_engine
 
@@ -16,6 +18,7 @@ from domain.EasyLogger import EasyLogger
 from dotenv import load_dotenv
 from service.ProofSearchService import ProofSearchService
 
+
 FORMALIZATION_MODEL_NAME = "gpt-4.1-mini-2025-04-14"
 
 if __name__ == '__main__':
@@ -24,7 +27,11 @@ if __name__ == '__main__':
     device = "cpu"
 
     sqs_url = os.environ["THEOREM_SQS_URL"]
-    sqs_client = boto3.client('sqs')
+    sqs_client = boto3.client(
+        'sqs',
+        aws_access_key_id=os.environ['AWS_IAM_ACCESS_KEY'],
+        aws_secret_access_key=os.environ['AWS_IAM_SECRET_ACCESS_KEY']
+    )
 
     # lean_interact_facade = LeanInteractFacade()
     lean_interact_facade = MockLeanExecutor()

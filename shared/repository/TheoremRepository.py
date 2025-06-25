@@ -9,7 +9,7 @@ from service.InformalProofSearchResult import InformalProofSearchResult
 
 
 class TheoremRepository:
-    INVALID_ID = -1
+    INVALID_ID = None
 
     def __init__(self, db_engine: Engine, logger: EasyLogger):
         self.__db_engine = db_engine

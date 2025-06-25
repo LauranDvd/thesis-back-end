@@ -1,10 +1,12 @@
 import json
 import os
+import sys
 from urllib.request import urlopen
+
+# sys.path.append(os.path.abspath("../shared"))
 
 import boto3
 import jwt
-import torch
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -131,15 +133,15 @@ theorem_proving_service: TheoremProvingService
 
 def initialize():
     global lean_interact_facade, proof_search_controller, logger, theorem_proving_service
-
-    device = CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE
-    print(f"Using device: {device}")
-
     # lean_interact_facade = LeanInteractFacade()
     lean_interact_facade = MockLeanExecutor()
 
     # TODO se a dependency injection library?
-    sqs_client = boto3.client('sqs')
+    sqs_client = boto3.client(
+        'sqs',
+        aws_access_key_id=os.environ['AWS_IAM_ACCESS_KEY'],
+        aws_secret_access_key=os.environ['AWS_IAM_SECRET_ACCESS_KEY']
+    )
     queue_url = os.environ['THEOREM_SQS_URL']
     theorem_queue = TheoremQueue(sqs_client, queue_url, EasyLogger())
 
@@ -267,4 +269,4 @@ def language_model():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)

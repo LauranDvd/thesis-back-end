@@ -1,10 +1,6 @@
-import logging
-import sys
 import random
 
 import torch
-from transformers import PreTrainedTokenizerBase
-from transformers.modeling_utils import SpecificPreTrainedModelType
 
 from domain.EasyLogger import EasyLogger
 from domain.language_model.model_factory import IModelAndTokenizerFactory

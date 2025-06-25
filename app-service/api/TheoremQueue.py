@@ -1,5 +1,8 @@
 import json
+import os
+import sys
 import uuid
+sys.path.append("/shared")
 
 from botocore.client import BaseClient
 from botocore.exceptions import ClientError
