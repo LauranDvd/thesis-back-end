@@ -41,7 +41,7 @@ h : x + 1 = 5
 
     @override
     def is_theorem_solved(self, repl_output) -> bool:
-        x = random.randint(0, 100)
+        x = random.randint(0, 3)
         return x == 0
 
     @override

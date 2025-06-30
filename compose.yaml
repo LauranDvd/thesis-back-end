@@ -1,0 +1,13 @@
+services: 
+  web: 
+    build:
+     context: .
+     dockerfile: ./app-service/Dockerfile
+     target: builder
+    ports: 
+      - '5000:5000'
+  inference:
+    build:
+     context: .
+     dockerfile: ./model-inference-service/Dockerfile
+     target: builder

@@ -1,4 +1,5 @@
 from domain.EasyLogger import EasyLogger
+from domain.lean.LeanUtilities import LeanUtilities
 from exception.LeanException import LeanException
 from exception.NotFoundClientRequestException import NotFoundClientRequestException
 from service.TheoremProvingService import TheoremProvingService
@@ -11,14 +12,15 @@ class ProofSearchController:
 
 
     def handle_post_proof(self, theorem: str, model_short_name: str, user_id) -> int:
-        if not theorem or theorem == "":
-            raise NotFoundClientRequestException("No theorem provided")
-        if not model_short_name or model_short_name == "":
-            raise NotFoundClientRequestException("No language model name provided")
+        ProofSearchController.__validate_string_not_empty(theorem, "No theorem provided")
+        ProofSearchController.__validate_string_not_empty(model_short_name, "No language model name provided")
 
         if not self.__theorem_proving_service.is_language_model_available(model_short_name):
             raise NotFoundClientRequestException()
 
+        theorem = LeanUtilities.extract_theorem_statement(theorem)
+        if theorem is None:
+            raise NotFoundClientRequestException("No theorem in the Lean code")
         is_code_valid, lean_error = self.__theorem_proving_service.is_lean_code_error_free(theorem)
         if not is_code_valid:
             raise LeanException(lean_error)
@@ -29,17 +31,17 @@ class ProofSearchController:
         return proof_id
 
 
-    def handle_get_proof(self, proof_id: int) -> (bool, str):
-        successful, found_proof = self.__theorem_proving_service.retrieve_complete_proof(proof_id)
+    def handle_get_proof(self, proof_id: int, user_id: str) -> (bool, str):
+        successful, found_proof = self.__theorem_proving_service.retrieve_complete_proof(proof_id, user_id)
         if found_proof is None:
             raise NotFoundClientRequestException()
         else:
             return successful, found_proof
 
 
-    def handle_get_proof_informal(self, proof_id: int):
+    def handle_get_proof_informal(self, proof_id: int, user_id: str):
         informal_proof, was_successful, formalized_theorem, formal_proof = (
-            self.__theorem_proving_service.retrieve_complete_informal_proof(proof_id))
+            self.__theorem_proving_service.retrieve_complete_informal_proof(proof_id, user_id))
         if formal_proof is None:
             raise NotFoundClientRequestException()
         else:
@@ -47,10 +49,8 @@ class ProofSearchController:
 
 
     def handle_post_proof_informal(self, informal_theorem: str, model_short_name: str, user_id) -> int:
-        if not informal_theorem or informal_theorem == "":
-            raise NotFoundClientRequestException()
-        if not model_short_name or model_short_name == "":
-            raise NotFoundClientRequestException()
+        ProofSearchController.__validate_string_not_empty(informal_theorem, "No theorem provided")
+        ProofSearchController.__validate_string_not_empty(model_short_name, "No model provided")
 
         self.__logger.info(f"Received informal theorem: {informal_theorem}. Requested model: {model_short_name}")
 
@@ -64,10 +64,8 @@ class ProofSearchController:
 
 
     def handle_post_proof_fill(self, theorem_and_partial_proof: str, model_short_name: str, user_id) -> int:
-        if not theorem_and_partial_proof or theorem_and_partial_proof == "":
-            raise NotFoundClientRequestException()
-        if not model_short_name or model_short_name == "":
-            raise NotFoundClientRequestException()
+        ProofSearchController.__validate_string_not_empty(theorem_and_partial_proof, "No theorem provided")
+        ProofSearchController.__validate_string_not_empty(model_short_name, "No model provided")
 
         if not self.__theorem_proving_service.is_language_model_available(model_short_name):
             raise NotFoundClientRequestException()
@@ -87,3 +85,8 @@ class ProofSearchController:
         proof_history = self.__theorem_proving_service.get_proof_history(user_id)
         self.__logger.debug(f"Will return proof history of size {len(proof_history)} to user {user_id}")
         return proof_history
+
+    @staticmethod
+    def __validate_string_not_empty(string: str, error_message: str):
+        if not string or string == "":
+            raise NotFoundClientRequestException(error_message)

@@ -1,10 +1,14 @@
 import json
 import os
+import sys
 from urllib.request import urlopen
+
+sys.path.append("/shared")
+
+# sys.path.append(os.path.abspath("../shared"))
 
 import boto3
 import jwt
-import torch
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -95,31 +99,32 @@ def requires_auth(f):
                     public_key,
                     algorithms=AUTH0_ALGORITHMS,
                     audience=AUTH0_API_AUDIENCE,
-                    issuer="https://"+AUTH0_DOMAIN+"/"
+                    issuer="https://" + AUTH0_DOMAIN + "/"
                 )
             except jwt.ExpiredSignatureError:
                 raise AuthError({"code": "token_expired",
-                                "description": "token is expired"}, 401)
+                                 "description": "token is expired"}, 401)
             except jwt.InvalidAudienceError:
                 raise AuthError({"code": "invalid_audience",
-                                "description":
-                                    "incorrect audience,"
-                                    " please check the audience"}, 401)
+                                 "description":
+                                     "incorrect audience,"
+                                     " please check the audience"}, 401)
             except jwt.InvalidIssuerError:
                 raise AuthError({"code": "invalid_issuer",
-                                "description":
-                                    "incorrect issuer,"
-                                    " please check the issuer"}, 401)
+                                 "description":
+                                     "incorrect issuer,"
+                                     " please check the issuer"}, 401)
             except Exception:
                 raise AuthError({"code": "invalid_header",
-                                "description":
-                                    "Unable to parse authentication"
-                                    " token."}, 401)
+                                 "description":
+                                     "Unable to parse authentication"
+                                     " token."}, 401)
 
             g.current_user = payload
             return f(*args, **kwargs)
         raise AuthError({"code": "invalid_header",
-                        "description": "Unable to find appropriate key"}, 401)
+                         "description": "Unable to find appropriate key"}, 401)
+
     return decorated
 
 
@@ -128,24 +133,25 @@ proof_search_controller: ProofSearchController
 logger: EasyLogger
 theorem_proving_service: TheoremProvingService
 
+def __build_db_url(username: str, password: str, endpoint: str, port: str, db_name: str) -> str:
+    return "postgresql://" + username + ":" + password + "@" + endpoint + ":" + port + "/" + db_name
 
 def initialize():
     global lean_interact_facade, proof_search_controller, logger, theorem_proving_service
+    lean_interact_facade = LeanInteractFacade()
+    # lean_interact_facade = MockLeanExecutor()
 
-    device = CUDA_DEVICE if torch.cuda.is_available() else CPU_DEVICE
-    print(f"Using device: {device}")
-
-    # lean_interact_facade = LeanInteractFacade()
-    lean_interact_facade = MockLeanExecutor()
-
-    # TODO se a dependency injection library?
-    sqs_client = boto3.client('sqs')
+    sqs_client = boto3.client(
+        'sqs',
+        aws_access_key_id=os.environ['AWS_IAM_ACCESS_KEY'],
+        aws_secret_access_key=os.environ['AWS_IAM_SECRET_ACCESS_KEY']
+    )
     queue_url = os.environ['THEOREM_SQS_URL']
     theorem_queue = TheoremQueue(sqs_client, queue_url, EasyLogger())
 
-    db_url = "postgresql://" + os.environ["AWS_RDS_USERNAME"] + ":" + os.environ["AWS_RDS_PASSWORD"] + \
-             "@" + os.environ['AWS_RDS_ENDPOINT'] + ":" + os.environ['AWS_RDS_PORT'] + "/" + \
-             os.environ['AWS_RDS_DB_NAME']
+    db_url = __build_db_url(os.environ["AWS_RDS_USERNAME"], os.environ["AWS_RDS_PASSWORD"],
+                            os.environ['AWS_RDS_ENDPOINT'],
+                            os.environ['AWS_RDS_PORT'], os.environ['AWS_RDS_DB_NAME'])
     db_engine = create_engine(db_url, pool_pre_ping=True)
     theorem_repository = TheoremRepository(db_engine, EasyLogger())
 
@@ -163,7 +169,6 @@ def initialize():
 
 initialize()
 
-
 @app.route('/proof', methods=['POST'])
 @requires_auth
 def proof():
@@ -177,7 +182,7 @@ def proof():
         try:
             proof_id = proof_search_controller.handle_post_proof(theorem, model_short_name, user_id)
             return jsonify({"proof_id": proof_id}), 202
-        except NotFoundClientRequestException as e:
+        except NotFoundClientRequestException:
             return jsonify({}), 404
         except LeanException as e:
             return jsonify({"lean_error": str(e)}), 400
@@ -187,9 +192,10 @@ def proof():
 
 @app.route('/proof/<int:proof_id>', methods=['GET'])
 @requires_auth
-def get_proof_by_id(proof_id): # TODO verify that the proof belongs to that user (also in the other GET reqs)
+def get_proof_by_id(proof_id):
+    user_id = g.current_user.get("sub")
     try:
-        successful, found_proof = proof_search_controller.handle_get_proof(proof_id)
+        successful, found_proof = proof_search_controller.handle_get_proof(proof_id, user_id)
         return jsonify({"successful": successful, "proof": found_proof}), 200
     except NotFoundClientRequestException:
         return jsonify({}), 404
@@ -198,12 +204,13 @@ def get_proof_by_id(proof_id): # TODO verify that the proof belongs to that user
 @app.route('/proof/informal/<int:proof_id>', methods=['GET'])
 @requires_auth
 def get_informal_proof_by_id(proof_id):
+    user_id = g.current_user.get("sub")
     if request.method == 'GET':
         try:
             informal_proof, was_successful, formalized_theorem, formal_proof = proof_search_controller.handle_get_proof_informal(
-                proof_id)
+                proof_id, user_id)
             return jsonify({"proof": informal_proof, "successful": was_successful,
-                        "formalized_theorem": formalized_theorem, "original_proof": formal_proof}), 200
+                            "formalized_theorem": formalized_theorem, "original_proof": formal_proof}), 200
         except NotFoundClientRequestException:
             return jsonify({}), 404
     return jsonify({"error": "Bad request"}), 400
@@ -239,7 +246,8 @@ def proof_fill():
         user_id = g.current_user.get("sub")
 
         try:
-            proof_id = proof_search_controller.handle_post_proof_fill(theorem_and_partial_proof, model_short_name, user_id)
+            proof_id = proof_search_controller.handle_post_proof_fill(theorem_and_partial_proof, model_short_name,
+                                                                      user_id)
             return jsonify({"proof_id": proof_id}), 202
         except NotFoundClientRequestException:
             return jsonify({}), 404
@@ -258,6 +266,7 @@ def get_proof_history():
         return jsonify(proof_history), 200
     return jsonify({"error": "Bad request"}), 400
 
+
 @app.route('/language_model', methods=['GET'])
 @requires_auth
 def language_model():
@@ -267,4 +276,4 @@ def language_model():
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0', port=5000)

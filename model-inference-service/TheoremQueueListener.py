@@ -1,12 +1,27 @@
 import json
-import os
-import re
 
 from botocore.client import BaseClient
 
 from domain.EasyLogger import EasyLogger
+from domain.lean.LeanUtilities import LeanUtilities
 from service.ProofSearchService import ProofSearchService
 from repository.TheoremRepository import TheoremRepository
+
+IS_FILL_KEY = "is_fill"
+
+IS_INFORMAL_KEY = "is_informal"
+
+PROOF_ID_KEY = "proof_id"
+
+MODEL_KEY = "model"
+
+THEOREM_KEY = "theorem"
+
+MESSAGE_RECEIPT_HANDLE_KEY = "ReceiptHandle"
+
+MESSAGE_BODY_KEY = "Body"
+
+QUEUE_RESPONSE_MESSAGE_KEY = "Messages"
 
 
 class TheoremQueueListener:
@@ -27,11 +42,11 @@ class TheoremQueueListener:
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=20
             )
-            if "Messages" not in queue_response:
+            if QUEUE_RESPONSE_MESSAGE_KEY not in queue_response:
                 self.__logger.debug("No messages in queue yet.")
                 continue
-            message = queue_response["Messages"][0]["Body"]
-            receipt_handle = queue_response["Messages"][0]["ReceiptHandle"]
+            message = queue_response[QUEUE_RESPONSE_MESSAGE_KEY][0][MESSAGE_BODY_KEY]
+            receipt_handle = queue_response[QUEUE_RESPONSE_MESSAGE_KEY][0][MESSAGE_RECEIPT_HANDLE_KEY]
             self.__logger.debug(f"Message received on SQS: {message}")
 
             self.__sqs_client.delete_message(
@@ -41,11 +56,11 @@ class TheoremQueueListener:
             self.__logger.debug(f"Message deleted from SQS: {receipt_handle}")
 
             message_json = json.loads(message)
-            theorem = message_json["theorem"]
-            model_short_name = message_json["model"]
-            proof_id = int(message_json["proof_id"])
-            is_informal = bool(message_json["is_informal"])
-            is_fill = bool(message_json["is_fill"])
+            theorem = message_json[THEOREM_KEY]
+            model_short_name = message_json[MODEL_KEY]
+            proof_id = int(message_json[PROOF_ID_KEY])
+            is_informal = bool(message_json[IS_INFORMAL_KEY])
+            is_fill = bool(message_json[IS_FILL_KEY])
 
             self.__logger.debug(f"Will begin proof search for proof {proof_id}")
             if is_informal:
@@ -80,7 +95,7 @@ class TheoremQueueListener:
                     successful
                 )
             else:
-                theorem = self.__extract_theorem_statement(theorem)
+                theorem = LeanUtilities.extract_theorem_statement(theorem)
                 self.__logger.info(f"Cleaned theorem statement: {theorem}")
 
                 proof, successful = self.__proof_search_service.search_proof(
@@ -92,8 +107,3 @@ class TheoremQueueListener:
                     proof,
                     successful
                 )
-
-    @staticmethod
-    def __extract_theorem_statement(theorem: str) -> str: # TODO move this from here
-        match = re.search(r'(theorem .*? by)', theorem)
-        return match.group(1) if match else None

@@ -1,10 +1,7 @@
 import heapq
-import sys
-from logging import DEBUG
 
 from domain.EasyLogger import EasyLogger
-from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel, THEOREM_WAS_PROVED_TACTIC
-from domain.language_model.ProofSearchLanguageModel import ERROR_TACTIC
+from domain.language_model.ProofSearchLanguageModel import ProofSearchLanguageModel
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
 from domain.lean.ILeanEvaluator import ILeanEvaluator
 from domain.lean.LeanUtilities import LeanUtilities
@@ -13,7 +10,7 @@ from service.InformalProofSearchResult import InformalProofSearchResult
 
 
 class ProofSearchService:
-    SEARCH_BUDGET = 10
+    SEARCH_BUDGET = 50
     SEARCH_BUDGET_PER_STEP = 4
 
     def __init__(
@@ -42,6 +39,11 @@ class ProofSearchService:
             self.__lean_evaluator,
             self.__lean_evaluation_interpreter
         )
+
+        if initial_formatted_program == LeanUtilities.PROVED_FORMATTED_PROGRAM:
+            self.__logger.debug(
+                f"Proof completed without generating any tactics.")
+            return clean_theorem_statement, True
 
         queue = []
         heapq.heappush(queue, (0, (clean_theorem_statement, initial_formatted_program)))
@@ -94,22 +96,11 @@ class ProofSearchService:
                                    )
 
         self.__logger.debug(f"Didn't find a proof with search budget={ProofSearchService.SEARCH_BUDGET}")
-        _, (popped_full_program, _) = heapq.heappop(queue)
-        return popped_full_program, False
-
-        # for i in range(10):
-        #     next_tactic = language_model.get_next_tactic(full_proof)
-        #
-        #     if next_tactic == THEOREM_WAS_PROVED_TACTIC:
-        #         return full_proof, True
-        #
-        #     if next_tactic != ERROR_TACTIC:
-        #         full_proof = f"{full_proof}\n{next_tactic}"
-        #         print(f"New full proof after adding a tactic: {full_proof}")
-        #     else:
-        #         self.__logger.debug("The tactic resulted in an error; will be ignored")
-
-        # return full_proof, False
+        if queue == []:
+            return clean_theorem_statement, False
+        else:
+            _, (popped_full_program, _) = heapq.heappop(queue)
+            return popped_full_program, False
 
     def search_informal_proof(self, informal_statement: str, model_short_name: str) -> InformalProofSearchResult:
         # clean_theorem_statement = """theorem example_theorem (x : Nat) (h : x = 2 * 3) : x + 1 = 7 := by"""
@@ -118,7 +109,7 @@ class ProofSearchService:
             f"Formalized version of user's informal theorem (successful: {was_formalization_successful}): {formal_statement}")
 
         if not was_formalization_successful:
-            return InformalProofSearchResult(False, False, False, "", "", "")  # todo factory methods/builder
+            return InformalProofSearchResult(False, False, False, "", "", "")
 
         formal_proof, was_proof_search_successful = self.search_proof(formal_statement, model_short_name)
         if not was_proof_search_successful:
@@ -133,11 +124,6 @@ class ProofSearchService:
 
     def get_or_load_language_model(self, model_short_name: str) -> ProofSearchLanguageModel:
         return self.__model_short_name_to_config[model_short_name].get_language_model()
-        # TODO Get or load
 
     def get_language_models(self):
         return list(self.__model_short_name_to_config.keys())
-
-    def set_language_model(self, language_model: ProofSearchLanguageModel):
-        self.language_model = language_model
-        self.__logger.debug(f"Changed the service's language model")
