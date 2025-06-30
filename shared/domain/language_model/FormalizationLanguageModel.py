@@ -3,7 +3,6 @@ from domain.EasyLogger import EasyLogger
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
 from domain.lean.ILeanEvaluator import ILeanEvaluator
 
-# TODO better few shot prompts
 FORMALIZATION_PROMPT = r"""You are given a mathematical theorem in LaTeX format.
 You need to formalize it into Lean 4 code. The theorem in LaTeX begins after [INFORMAL].
 Two examples are given. Write the formal statement after the last [FORMAL]. Begin with the `theorem` keyword. End with the `by` keyword. DO NOT include explanations. DO NOT include a proof.

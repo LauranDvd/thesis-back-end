@@ -19,7 +19,7 @@ class LoraModelAndTokenizerFactory(IModelAndTokenizerFactory):
         ).to(device)
         base_model.resize_token_embeddings(token_embeddings_length)
 
-        print(f"will load peftmodel from path {model_path} with base model {base_model_name}")
+        print(f"Will load peft model from path {model_path} with base model {base_model_name}")
         return PeftModel.from_pretrained(base_model, model_path, device_map="auto").to(device)
 
     @override

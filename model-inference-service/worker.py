@@ -1,6 +1,9 @@
 import os
 import sys
+
 sys.path.append("/shared")
+
+from domain.lean.LeanInteractFacade import LeanInteractFacade
 
 from sqlalchemy import create_engine
 
@@ -18,8 +21,12 @@ from domain.EasyLogger import EasyLogger
 from dotenv import load_dotenv
 from service.ProofSearchService import ProofSearchService
 
-
 FORMALIZATION_MODEL_NAME = "gpt-4.1-mini-2025-04-14"
+
+
+def __build_db_url(username: str, password: str, endpoint: str, port: str, db_name: str) -> str:
+    return "postgresql://" + username + ":" + password + "@" + endpoint + ":" + port + "/" + db_name
+
 
 if __name__ == '__main__':
     load_dotenv()
@@ -33,8 +40,8 @@ if __name__ == '__main__':
         aws_secret_access_key=os.environ['AWS_IAM_SECRET_ACCESS_KEY']
     )
 
-    # lean_interact_facade = LeanInteractFacade()
-    lean_interact_facade = MockLeanExecutor()
+    lean_interact_facade = LeanInteractFacade()
+    # lean_interact_facade = MockLeanExecutor()
     # lean_interact_facade = LakeReplFacade()
 
     formalization_language_model = FormalizationLanguageModel(
@@ -45,9 +52,9 @@ if __name__ == '__main__':
     )
     formalization_service = FormalizationService(formalization_language_model)
 
-    db_url = "postgresql://" + os.environ["AWS_RDS_USERNAME"] + ":" + os.environ["AWS_RDS_PASSWORD"] + \
-             "@" + os.environ['AWS_RDS_ENDPOINT'] + ":" + os.environ['AWS_RDS_PORT'] + "/" + \
-             os.environ['AWS_RDS_DB_NAME']
+    db_url = __build_db_url(os.environ["AWS_RDS_USERNAME"], os.environ["AWS_RDS_PASSWORD"],
+                            os.environ['AWS_RDS_ENDPOINT'],
+                            os.environ['AWS_RDS_PORT'], os.environ['AWS_RDS_DB_NAME'])
     db_engine = create_engine(db_url, pool_pre_ping=True)
     theorem_repository = TheoremRepository(db_engine, EasyLogger())
 

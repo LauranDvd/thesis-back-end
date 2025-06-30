@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 import uuid
 sys.path.append("/shared")
@@ -22,7 +21,7 @@ class TheoremQueue:
         try:
             sqs_response = self.__sqs_client.send_message(
                 QueueUrl=self.__sqs_url,
-                MessageBody=json.dumps({'theorem': theorem, 'proof_id': proof_id, 'model': model, 'is_informal': False, 'is_fill': False}),
+                MessageBody=TheoremQueue.__build_sqs_message_body(theorem, proof_id, model, False, False),
                 MessageGroupId=MESSAGE_GROUP_ID,
                 MessageDeduplicationId=str(uuid.uuid4())
             )
@@ -34,7 +33,7 @@ class TheoremQueue:
         try:
             sqs_response = self.__sqs_client.send_message(
                 QueueUrl=self.__sqs_url,
-                MessageBody=json.dumps({'theorem': theorem_with_partial_proof, 'proof_id': proof_id, 'model': model, 'is_informal': False, 'is_fill': True}),
+                MessageBody=TheoremQueue.__build_sqs_message_body(theorem_with_partial_proof, proof_id, model, False, True),
                 MessageGroupId=MESSAGE_GROUP_ID,
                 MessageDeduplicationId=str(uuid.uuid4())
             )
@@ -46,10 +45,14 @@ class TheoremQueue:
         try:
             sqs_response = self.__sqs_client.send_message(
                 QueueUrl=self.__sqs_url,
-                MessageBody=json.dumps({'theorem': informal_theorem, 'proof_id': proof_id, 'model': model, 'is_informal': True, 'is_fill': False}),
+                MessageBody=TheoremQueue.__build_sqs_message_body(informal_theorem, proof_id, model, True, False),
                 MessageGroupId=MESSAGE_GROUP_ID,
                 MessageDeduplicationId=str(uuid.uuid4())
             )
             self.__logger.debug(f"SQS response: {sqs_response}")
         except ClientError as error:
             self.__logger.error(f"Boto3 error when sending informal proof request: {error}")
+
+    @staticmethod
+    def __build_sqs_message_body(theorem: str, proof_id: int, model: str, is_informal: bool, is_fill: bool) -> str:
+        return json.dumps({'theorem': theorem, 'proof_id': proof_id, 'model': model, 'is_informal': is_informal, 'is_fill': is_fill})

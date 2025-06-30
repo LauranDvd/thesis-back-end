@@ -1,3 +1,5 @@
+from lean_interact.interface import LeanError
+
 from api.TheoremQueue import TheoremQueue
 from domain.EasyLogger import EasyLogger
 from domain.lean.ILeanEvaluationInterpreter import ILeanEvaluationInterpreter
@@ -12,7 +14,7 @@ class TheoremProvingService:
             self,
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter,
-            theorem_queue: TheoremQueue,  # TODO add the queue in the repo?
+            theorem_queue: TheoremQueue,
             theorem_repository: TheoremRepository,
             logger: EasyLogger
     ):
@@ -28,6 +30,8 @@ class TheoremProvingService:
     def is_lean_code_error_free(self, code: str) -> (bool, str):
         # return False, "mock lean error"
         lean_evaluation_result = self.__lean_evaluator.evaluate(code)
+        if isinstance(lean_evaluation_result, LeanError):
+            return False, lean_evaluation_result.message
         if self.__lean_evaluation_interpreter.has_errors(lean_evaluation_result):
             return False, self.__lean_evaluation_interpreter.get_error(lean_evaluation_result)
         return True, ""
@@ -47,15 +51,15 @@ class TheoremProvingService:
         self.__theorem_queue.send_proof_fill_request(theorem_with_partial_proof, proof_id, model)
         return proof_id
 
-    def retrieve_complete_proof(self, proof_id: int) -> (bool, str):
+    def retrieve_complete_proof(self, proof_id: int, user_id: str) -> (bool, str):
         proof: ProofEntity = self.__theorem_repository.retrieve_proof(proof_id)
-        if proof.formal_proof == "" or proof.formal_proof is None:
+        if proof.formal_proof == "" or proof.formal_proof is None or proof.user_id != user_id:
             return False, None
         return proof.successful, proof.formal_proof
 
-    def retrieve_complete_informal_proof(self, proof_id: int) -> (bool, str):
+    def retrieve_complete_informal_proof(self, proof_id: int, user_id: str) -> (bool, str):
         proof: ProofEntity = self.__theorem_repository.retrieve_proof(proof_id)
-        if proof.formal_proof == "" or proof.formal_proof is None:
+        if proof.formal_proof == "" or proof.formal_proof is None or proof.user_id != user_id:
             return None, False, None, None
 
         formalized_theorem = self.__theorem_repository.get_formalization(proof.statement_formalization_id).formal_text
