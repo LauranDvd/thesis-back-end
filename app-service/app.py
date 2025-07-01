@@ -81,7 +81,7 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if app.config["TESTING"]:
-            g.current_user = {"sub": "someone"}
+            g.current_user = {"sub": "google-oauth2|115583874233243976640"}
             return f(*args, **kwargs)
 
         token = get_token_auth_header()
@@ -138,8 +138,14 @@ def __build_db_url(username: str, password: str, endpoint: str, port: str, db_na
 
 def initialize():
     global lean_interact_facade, proof_search_controller, logger, theorem_proving_service
-    lean_interact_facade = LeanInteractFacade()
-    # lean_interact_facade = MockLeanExecutor()
+
+    is_test_mode = app.config.get('TESTING', False)
+    print(f"Test mode: {is_test_mode}")
+
+    if is_test_mode:
+        lean_interact_facade = MockLeanExecutor()
+    else:
+        lean_interact_facade = LeanInteractFacade(test_mode=is_test_mode)
 
     sqs_client = boto3.client(
         'sqs',
@@ -166,8 +172,6 @@ def initialize():
 
     logger = EasyLogger()
 
-
-initialize()
 
 @app.route('/proof', methods=['POST'])
 @requires_auth
@@ -276,4 +280,5 @@ def language_model():
 
 
 if __name__ == '__main__':
+    initialize()
     app.run(host='0.0.0.0', port=5000)

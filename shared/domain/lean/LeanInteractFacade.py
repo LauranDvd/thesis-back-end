@@ -34,6 +34,7 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
 
     def __init__(self, test_mode=False):
         self.__logger = EasyLogger()
+        self.__test_mode = test_mode
         if not test_mode:
             self.__initialize_lean_environment()
         self.__reset_cache_count = 0
@@ -43,7 +44,7 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
         self.__logger.debug(f"Will run this Lean code: {lean_code}")
 
         self.__reset_cache_count += 1
-        if self.__reset_cache_count == self.RESET_CACHE_STEPS:
+        if self.__reset_cache_count == self.RESET_CACHE_STEPS and not self.__test_mode:
             self.__logger.debug(f"Will reset Lean cache")
             self.__initialize_lean_environment()
             self.__reset_cache_count = 0
@@ -62,7 +63,8 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
                     self.__logger.debug(
                         "The Lean executor does not recognize the environment. Will reinitialize the environment.")
                     # self.__lean_server.clear_session_cache(force=True)
-                    self.__initialize_lean_environment()
+                    if not self.__test_mode:
+                        self.__initialize_lean_environment()
             else:
                 ran_successfully = True
             run_attempts += 1
