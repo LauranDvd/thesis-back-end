@@ -40,8 +40,8 @@ if __name__ == '__main__':
         aws_secret_access_key=os.environ['AWS_IAM_SECRET_ACCESS_KEY']
     )
 
-    lean_interact_facade = LeanInteractFacade()
-    # lean_interact_facade = MockLeanExecutor()
+    # lean_interact_facade = LeanInteractFacade()
+    lean_interact_facade = MockLeanExecutor()
     # lean_interact_facade = LakeReplFacade()
 
     formalization_language_model = FormalizationLanguageModel(

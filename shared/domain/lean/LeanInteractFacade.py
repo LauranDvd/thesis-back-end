@@ -99,7 +99,7 @@ class LeanInteractFacade(ILeanEvaluator, ILeanEvaluationInterpreter):
         try:
             subprocess.run(["clear-lean-cache"], check=True)
             self.__logger.debug(f"Finished running clear-lean-cache")
-        except subprocess.CalledProcessError | subprocess.TimeoutExpired as e:
+        except Exception as e:
             self.__logger.error(f"Could not complete clear-lean-cache: {e}")
 
         try:

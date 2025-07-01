@@ -145,7 +145,8 @@ def initialize():
     if is_test_mode:
         lean_interact_facade = MockLeanExecutor()
     else:
-        lean_interact_facade = LeanInteractFacade(test_mode=is_test_mode)
+        lean_interact_facade = MockLeanExecutor()
+        # lean_interact_facade = LeanInteractFacade(test_mode=is_test_mode)
 
     sqs_client = boto3.client(
         'sqs',
@@ -171,7 +172,6 @@ def initialize():
     proof_search_controller = ProofSearchController(theorem_proving_service)
 
     logger = EasyLogger()
-
 
 @app.route('/proof', methods=['POST'])
 @requires_auth
@@ -280,5 +280,6 @@ def language_model():
 
 
 if __name__ == '__main__':
+    print("will init")
     initialize()
     app.run(host='0.0.0.0', port=5000)
