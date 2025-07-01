@@ -145,8 +145,8 @@ def initialize():
     if is_test_mode:
         lean_interact_facade = MockLeanExecutor()
     else:
-        lean_interact_facade = MockLeanExecutor()
-        # lean_interact_facade = LeanInteractFacade(test_mode=is_test_mode)
+        # lean_interact_facade = MockLeanExecutor()
+        lean_interact_facade = LeanInteractFacade(test_mode=is_test_mode)
 
     sqs_client = boto3.client(
         'sqs',
