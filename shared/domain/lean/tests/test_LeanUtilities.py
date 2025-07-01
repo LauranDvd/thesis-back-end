@@ -80,3 +80,17 @@ abcde"""
         self.assertEqual(LeanUtilities.ERROR_FORMATTED_PROGRAM, LeanUtilities.build_formatted_program(invalid_program,
                                                                                                       mock_evaluator,
                                                                                                       mock_evaluation_interpreter))
+
+    def test_extract_theorem_statement_returns_none_if_no_theorem(self):
+        actual = LeanUtilities.extract_theorem_statement("no theorem here")
+        self.assertIsNone(actual)
+
+    def test_extract_theorem_statement_returns_theorem_if_it_exists(self):
+        full_code = """import Mathlib
+theorem my_theorem (x : Nat) (h : x = 2 * 3) : x + 1 = 7 := by
+linarith
+simp [h]"""
+        expected_theorem_statement = "theorem my_theorem (x : Nat) (h : x = 2 * 3) : x + 1 = 7 := by"
+
+        actual = LeanUtilities.extract_theorem_statement(full_code)
+        self.assertEqual(expected_theorem_statement, actual)

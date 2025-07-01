@@ -24,8 +24,6 @@ class LeanUtilities:
             lean_evaluator: ILeanEvaluator,
             lean_evaluation_interpreter: ILeanEvaluationInterpreter
     ) -> str:
-        logging.debug(f"Building formatted program for program: {program}")
-
         LeanUtilities.logger.debug(f"Formatting program for: {program}")
         repl_output = lean_evaluator.evaluate(program)
 
